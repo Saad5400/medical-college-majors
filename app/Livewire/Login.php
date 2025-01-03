@@ -2,10 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Http\Responses\LoginResponse;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
+use Filament\Models\Contracts\FilamentUser;
 use Livewire\Component;
 
 class Login extends \Filament\Pages\Auth\Login
@@ -17,6 +21,29 @@ class Login extends \Filament\Pages\Auth\Login
         }
 
         $this->form->fill();
+    }
+
+    public function authenticate(): ?LoginResponseContract
+    {
+        try {
+            $this->rateLimit(5);
+        } catch (TooManyRequestsException $exception) {
+            $this->getRateLimitedNotification($exception)?->send();
+
+            return null;
+        }
+
+        $data = $this->form->getState();
+
+        if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
+            $this->throwFailureValidationException();
+        }
+
+        $user = Filament::auth()->user();
+
+        session()->regenerate();
+
+        return new LoginResponse();
     }
 
     protected function getEmailFormComponent(): \Filament\Forms\Components\Component
