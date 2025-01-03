@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RegistrationRequest extends Model
 {
     protected $fillable = [
         'user_id',
-        'user_gpa',
     ];
 
     public function user(): BelongsTo
@@ -20,6 +20,11 @@ class RegistrationRequest extends Model
 
     public function majors(): BelongsToMany
     {
-        return $this->belongsToMany(Major::class)->withPivot('sort');
+        return $this->belongsToMany(Major::class);
+    }
+
+    public function majorRegistrationRequests(): HasMany
+    {
+        return $this->hasMany(MajorRegistrationRequest::class);
     }
 }

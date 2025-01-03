@@ -20,32 +20,48 @@ class RegistrationRequestResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $modelLabel = 'طلب تسجيل';
+    protected static ?string $pluralModelLabel = 'طلبات التسجيل';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Group::make([
-                    Forms\Components\TextInput::make('user_gpa')
-                        ->required()
-                        ->numeric(),
-                    Forms\Components\Repeater::make('majors')
-                        ->columnSpan(2)
-                        ->relationship('majors')
-                        ->reorderable('sort')
-                        ->live()
-                        ->schema([
-                            Forms\Components\Select::make('major_id')
-                                ->options(function (Forms\Get $get) {
-                                    return Major::query()
-                                        ->get()
-                                        ->mapWithKeys(fn($major) => [$major->id => $major->name]);
-                                })
-                                ->searchable()
-                                ->required(),
-                        ]),
-                ])
-                    ->columnSpanFull()
-                    ->columns(3),
+                Forms\Components\Repeater::make('majorRegistrationRequests')
+                    ->label('رغبات التسكين')
+                    ->relationship('majorRegistrationRequests')
+                    ->live()
+                    ->deletable(false)
+                    ->minItems(fn() => Major::query()->count())
+                    ->defaultItems(fn() => Major::query()->count())
+                    ->schema([
+                        Forms\Components\Hidden::make('sort')
+                            ->label('ترتيب')
+                            ->default(function (Forms\Get $get, $component) {
+                                $requests = $get('data.majorRegistrationRequests', true);
+                                $path = explode('.', $component->getStatePath())[2];
+                                return array_search($path, array_keys($requests));
+                            })
+                            ->required(),
+                        Forms\Components\Select::make('major_id')
+                            ->label('')
+                            ->relationship('major', 'name')
+                            ->options(function (Forms\Get $get) {
+                                // Retrieve current requests to exclude already selected majors
+                                $requests = $get('data.majorRegistrationRequests', true);
+                                $requests = array_values($requests);
+
+                                $selectedIds = array_map(fn($request) => $request['major_id'], $requests);
+                                $selectedIds = array_filter($selectedIds, fn($id) => $id !== null);
+
+                                return Major::query()
+                                    ->whereNotIn('id', $selectedIds)
+                                    ->get()
+                                    ->mapWithKeys(fn($major) => [$major->id => $major->name]);
+                            })
+                            ->searchable()
+                            ->required(),
+                    ])
             ]);
     }
 
@@ -62,9 +78,6 @@ class RegistrationRequestResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('user_gpa')
                     ->numeric()
                     ->sortable(),
             ])
