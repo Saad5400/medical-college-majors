@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +15,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        Artisan::call('permissions:sync', ['-P' => true]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $admin = Role::query()->create(['name' => 'admin']);
+
+        $saad = User::query()->create([
+            'name' => 'Saad Batwa',
+            'email' => 'sdbtwa@gmail.com',
+            'password' => bcrypt('1'),
         ]);
+
+        $saad->assignRole($admin);
     }
 }
