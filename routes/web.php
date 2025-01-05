@@ -2,9 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect()->route('request'));
+Route::get('/', function () {
+    $user = auth()->user();
 
-Route::get('login', \App\Livewire\Login::class)->name('login');
-Route::get('register', \App\Livewire\Register::class)->name('register');
+    if ($user->hasRole('admin')) {
+        return redirect(\App\Filament\Resources\MajorResource::getUrl());
+    }
 
-Route::get('request', [\App\Http\Controllers\RequestController::class, 'index'])->name('request')->middleware('auth');
+    if ($user->registrationRequests()->exists()) {
+        return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('edit', ['record' => $user->registrationRequests()->first()->id]));
+    }
+
+    return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('create'));
+});

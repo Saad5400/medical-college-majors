@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RegistrationRequestResource extends Resource
@@ -23,6 +24,18 @@ class RegistrationRequestResource extends Resource
     protected static ?string $modelLabel = 'طلب تسجيل';
     protected static ?string $pluralModelLabel = 'طلبات التسجيل';
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (auth()->user()->hasRole('admin')) {
+            return $query;
+        }
+
+        return $query->where('user_id', auth()->id());
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -32,6 +45,7 @@ class RegistrationRequestResource extends Resource
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
+                    ->visible(fn() => auth()->user()->hasRole('admin'))
                     ->required(),
                 ...static::getFormFields()
             ]);
@@ -86,6 +100,7 @@ class RegistrationRequestResource extends Resource
     {
         return [
             Forms\Components\Repeater::make('majorRegistrationRequests')
+                ->columnSpanFull()
                 ->label('رغبات التسكين')
                 ->relationship('majorRegistrationRequests')
                 ->live()
@@ -121,6 +136,7 @@ class RegistrationRequestResource extends Resource
                                 ->mapWithKeys(fn($major) => [$major->id => $major->name]);
                         })
                         ->searchable()
+                        ->preload()
                         ->required(),
                 ])
         ];

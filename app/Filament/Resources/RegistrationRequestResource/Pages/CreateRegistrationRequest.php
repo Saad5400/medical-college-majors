@@ -14,8 +14,17 @@ class CreateRegistrationRequest extends CreateRecord
     {
         $data = parent::mutateFormDataBeforeCreate($data);
 
-        $data['user_id'] = auth()->id();
+        if (!auth()->user()->hasRole('admin')) {
+            $data['user_id'] = auth()->id();
+        }
 
         return $data;
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
     }
 }

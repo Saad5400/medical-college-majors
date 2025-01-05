@@ -13,7 +13,7 @@ class RegistrationRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->checkPermissionTo('view-any RegistrationRequest');
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class RegistrationRequestPolicy
      */
     public function view(User $user, RegistrationRequest $registrationrequest): bool
     {
-        return $user->checkPermissionTo('view RegistrationRequest');
+        return $registrationrequest->user_id === auth()->id();
     }
 
     /**
@@ -29,15 +29,15 @@ class RegistrationRequestPolicy
      */
     public function create(User $user): bool
     {
-        return $user->checkPermissionTo('create RegistrationRequest');
+        return auth()->user()->registrationRequests()->doesntExist();
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, RegistrationRequest $registrationrequest): bool
+    public function update(User $user, RegistrationRequest $record): bool
     {
-        return $user->checkPermissionTo('update RegistrationRequest');
+        return $record->user_id === auth()->id();
     }
 
     /**
@@ -45,7 +45,7 @@ class RegistrationRequestPolicy
      */
     public function delete(User $user, RegistrationRequest $registrationrequest): bool
     {
-        return $user->checkPermissionTo('delete RegistrationRequest');
+        return $registrationrequest->user_id === auth()->id();
     }
 
     /**
