@@ -11,11 +11,13 @@ class Create extends Component implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    public ?array $data = [];
+    public ?RegistrationRequest $record;
+    public array $data = [];
 
-    public function mount(RegistrationRequest $record): void
+    public function mount(): void
     {
-        $this->form->fill($record->toArray());
+        $this->record = auth()->user()->registrationRequests()->firstOrNew();
+        $this->form->fill($this->record->toArray());
     }
 
     public function render(): \Illuminate\Contracts\View\View
@@ -67,10 +69,13 @@ class Create extends Component implements Forms\Contracts\HasForms
             ]);
     }
 
-    public function create(): void
+    public function upsertRequest(): void
     {
-        $record = RegistrationRequest::create($this->form->getState());
+        $record = RegistrationRequest::updateOrCreate(
+            ['user_id' => auth()->id()],
+            $this->form->getState()
+        );
 
-        $this->form->model($record)->saveRelationships();
+        $this->form->model($record);
     }
 }
