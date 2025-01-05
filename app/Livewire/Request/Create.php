@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Request;
 
+use App\Filament\Resources\RegistrationRequestResource;
 use App\Models\Major;
 use App\Models\RegistrationRequest;
+use App\Models\User;
 use Filament\Forms;
 use Livewire\Component;
 
@@ -16,8 +18,9 @@ class Create extends Component implements Forms\Contracts\HasForms
 
     public function mount(): void
     {
-        $this->record = auth()->user()->registrationRequests()->firstOrNew();
-        $this->form->fill($this->record->toArray());
+        $this->record = User::query()->find(auth()->id())?->registrationRequests()->first();
+        $this->record->load('majorRegistrationRequests');
+        $this->form->fill($this->record?->toArray());
     }
 
     public function render(): \Illuminate\Contracts\View\View
@@ -30,43 +33,7 @@ class Create extends Component implements Forms\Contracts\HasForms
         return $form
             ->model(RegistrationRequest::class)
             ->statePath('data')
-            ->schema([
-                Forms\Components\Repeater::make('majorRegistrationRequests')
-                    ->label('رغبات التسكين')
-                    ->relationship('majorRegistrationRequests')
-                    ->live()
-                    ->deletable(false)
-                    ->minItems(fn() => Major::query()->count())
-                    ->defaultItems(fn() => Major::query()->count())
-                    ->schema([
-                        Forms\Components\Hidden::make('sort')
-                            ->label('ترتيب')
-                            ->default(function (Forms\Get $get, $component) {
-                                $requests = $get('data.majorRegistrationRequests', true);
-                                $path = explode('.', $component->getStatePath())[2];
-                                return array_search($path, array_keys($requests));
-                            })
-                            ->required(),
-                        Forms\Components\Select::make('major_id')
-                            ->label('')
-                            ->relationship('major', 'name')
-                            ->options(function (Forms\Get $get) {
-                                // Retrieve current requests to exclude already selected majors
-                                $requests = $get('data.majorRegistrationRequests', true);
-                                $requests = array_values($requests);
-
-                                $selectedIds = array_map(fn($request) => $request['major_id'], $requests);
-                                $selectedIds = array_filter($selectedIds, fn($id) => $id !== null);
-
-                                return Major::query()
-                                    ->whereNotIn('id', $selectedIds)
-                                    ->get()
-                                    ->mapWithKeys(fn($major) => [$major->id => $major->name]);
-                            })
-                            ->searchable()
-                            ->required(),
-                    ])
-            ]);
+            ->schema(RegistrationRequestResource::getFormFields());
     }
 
     public function upsertRequest(): void
@@ -76,6 +43,6 @@ class Create extends Component implements Forms\Contracts\HasForms
             $this->form->getState()
         );
 
-        $this->form->model($record);
+        $this->form->model($record)->saveRelationships();
     }
 }

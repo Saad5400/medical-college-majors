@@ -10,7 +10,7 @@
                 حفظ
             </x-filament::button>
             <x-filament::button
-                class="w-full !bg-transparent !border !border-red-500 !text-red-500 hover:!bg-red-500 hover:!text-white"
+                class="w-full !bg-transparent !text-red-500 hover:!bg-red-500 hover:!text-white !transition-colors"
                 wire:click="logout"
             >
                 تسجيل الخروج

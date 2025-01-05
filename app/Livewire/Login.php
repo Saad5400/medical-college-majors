@@ -9,8 +9,6 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
-use Filament\Models\Contracts\FilamentUser;
-use Livewire\Component;
 
 class Login extends \Filament\Pages\Auth\Login
 {
