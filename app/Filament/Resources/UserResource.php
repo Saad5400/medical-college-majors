@@ -78,7 +78,6 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('gpa')
                     ->label('المعدل')
-                    ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('student_id')
                     ->label('رقم الطالب')

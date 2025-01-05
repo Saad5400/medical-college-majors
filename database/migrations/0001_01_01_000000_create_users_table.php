@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->decimal('gpa')->nullable();
             $table->string('student_id')->nullable();
+            $table->string('major_id')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

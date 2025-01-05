@@ -25,6 +25,6 @@ class RegistrationRequest extends Model
 
     public function majorRegistrationRequests(): HasMany
     {
-        return $this->hasMany(MajorRegistrationRequest::class);
+        return $this->hasMany(MajorRegistrationRequest::class)->orderBy('sort');
     }
 }

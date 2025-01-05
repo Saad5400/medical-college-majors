@@ -64,8 +64,13 @@ class RegistrationRequestResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
+                    ->label('الطالب')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('المسارات')
+                    ->getStateUsing(fn($record) => $record->majorRegistrationRequests->pluck('major.name'))
+                    ->listWithLineBreaks()
+                    ->label('رغبات التسكين')
+                    ->searchable(),
             ])
             ->filters([
                 //

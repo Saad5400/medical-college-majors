@@ -5,8 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\MajorResource\Pages;
 use App\Filament\Resources\MajorResource\RelationManagers;
 use App\Models\Major;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -58,7 +60,7 @@ class MajorResource extends Resource
                 Tables\Columns\TextColumn::make('max_users')
                     ->label('الحد الأقصى لعدد الطلاب')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('first_choice_users')
+                Tables\Columns\TextColumn::make('first_choice_users_count')
                     ->label('عدد الطلاب الذين إختاروه كأول رغبة')
                     ->getStateUsing(function (Major $record) {
                         $count = 0;
@@ -71,6 +73,12 @@ class MajorResource extends Resource
                         return $count;
                     })
                     ->sortable(),
+                Tables\Columns\TextColumn::make('users_count')
+                    ->label('عدد الطلاب')
+                    ->getStateUsing(function (Major $record) {
+                        return $record->users()->count();
+                    })
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -78,6 +86,42 @@ class MajorResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('distribute')
+                    ->label('توزيع الطلاب على المسارات')
+                    ->action(function () {
+                        // Reset all users' major_id
+                        User::query()->update(['major_id' => null]);
+
+                        $users = User::query()
+                            ->orderBy('gpa', 'desc')
+                            ->get();
+
+                        /** @var User $user */
+                        foreach ($users as $user) {
+                            if ($user->registrationRequests()->count() === 0) {
+                                continue;
+                            }
+
+                            $registrationRequest = $user->registrationRequests()->latest()->first();
+                            $majors = $registrationRequest->majors()->orderByPivot('sort')->get();
+
+                            foreach ($majors as $major) {
+                                if ($major->users()->count() < $major->max_users) {
+                                    $user->major()->associate($major);
+                                    $user->save();
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        Notification::make()
+                            ->title('تم توزيع الطلاب على المسارات')
+                            ->success()
+                            ->send();
+                    })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -89,7 +133,7 @@ class MajorResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\UsersRelationManager::class,
         ];
     }
 
