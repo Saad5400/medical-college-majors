@@ -1,3 +1,11 @@
 <div>
-    {{-- If your happiness depends on money, you will never be happy with yourself. --}}
+    <form wire:submit="create">
+        {{ $this->form }}
+
+        <x-filament::button type="submit">
+            حفظ
+        </x-filament::button>
+    </form>
+
+    <x-filament-actions::modals/>
 </div>
