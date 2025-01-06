@@ -19,7 +19,7 @@ class RegistrationRequestResource extends Resource
 {
     protected static ?string $model = RegistrationRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
 
     protected static ?string $modelLabel = 'طلب تسجيل';
     protected static ?string $pluralModelLabel = 'طلبات التسجيل';
