@@ -69,7 +69,7 @@ RUN composer install --optimize-autoloader --no-dev \
 
 
 # If we're using Filament v3 and above, run caching commands...
-RUN  php artisan icons:cache && php artisan filament:cache-components
+RUN  php artisan icons:cache && php artisan filament:cache-components && php artisan filament:optimize
 
 
 # Multi-stage build: Build static assets
