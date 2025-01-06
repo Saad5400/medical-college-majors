@@ -18,6 +18,10 @@ class DatabaseSeeder extends Seeder
     {
         Artisan::call('permissions:sync', ['-P' => true]);
 
+        if (Role::query()->where('name', 'admin')->exists()) {
+            return;
+        }
+
         $admin = Role::query()->create(['name' => 'admin']);
 
         $saad = User::query()->create([
