@@ -35,12 +35,6 @@ class UserResource extends Resource
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('password')
-                    ->label('كلمة المرور')
-                    ->password()
-                    ->revealable()
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('gpa')
                     ->label('المعدل')
                     ->numeric()
@@ -55,6 +49,29 @@ class UserResource extends Resource
                     ->searchable()
                     ->preload()
                     ->multiple(),
+                Forms\Components\Group::make()
+                    ->columnSpanFull()
+                    ->schema([
+                        Forms\Components\Toggle::make('change_password')
+                            ->label('تغيير كلمة المرور')
+                            ->live()
+                            ->default($form->getOperation() === 'create')
+                            ->hidden($form->getOperation() === 'create'),
+                        Forms\Components\Group::make()
+                            ->schema(function (Forms\Get $get) {
+                                if ($get('change_password')) {
+                                    return [
+                                        Forms\Components\TextInput::make('password')
+                                            ->label('كلمة المرور')
+                                            ->password()
+                                            ->required()
+                                            ->minLength(8)
+                                            ->maxLength(255),
+                                    ];
+                                }
+                                return [];
+                            })
+                    ]),
             ]);
     }
 

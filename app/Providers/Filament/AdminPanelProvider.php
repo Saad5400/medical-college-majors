@@ -23,6 +23,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Rmsramos\Activitylog\ActivitylogPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -71,6 +72,12 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
+            ->plugin(
+                ActivitylogPlugin::make()
+                    ->label('سجل نشاط')
+                    ->pluralLabel('سجلات النشاط')
+                    ->authorize(fn() => auth()->user()->hasRole('admin'))
+            )
             ->plugin(
                 EasyFooterPlugin::make()
                     ->withLoadTime()
