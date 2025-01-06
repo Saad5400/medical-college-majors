@@ -52,6 +52,8 @@ class UserResource extends Resource
                 Forms\Components\Select::make('roles')
                     ->label('الأدوار')
                     ->relationship('roles', 'name')
+                    ->searchable()
+                    ->preload()
                     ->multiple(),
             ]);
     }

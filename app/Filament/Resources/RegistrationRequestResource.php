@@ -56,10 +56,12 @@ class RegistrationRequestResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('تاريخ التعديل')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -71,7 +73,6 @@ class RegistrationRequestResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('المسارات')
                     ->getStateUsing(fn($record) => $record->majorRegistrationRequests->pluck('major.name'))
-                    ->listWithLineBreaks()
                     ->label('رغبات التسكين')
                     ->searchable(),
             ])
