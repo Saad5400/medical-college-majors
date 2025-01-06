@@ -66,12 +66,16 @@ class RegistrationRequestResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('الطالب')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('user.gpa')
+                    ->label('المعدل')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('المسارات')
                     ->getStateUsing(fn($record) => $record->majorRegistrationRequests->pluck('major.name'))
                     ->listWithLineBreaks()
                     ->label('رغبات التسكين')
                     ->searchable(),
             ])
+            ->defaultSort('user.gpa', 'desc')
             ->filters([
                 //
             ])

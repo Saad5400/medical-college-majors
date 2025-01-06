@@ -34,15 +34,5 @@ class DatabaseSeeder extends Seeder
                 'max_users' => 18,
             ]);
         }
-
-        for ($i = 0; $i < 2; $i++) {
-            User::query()->create([
-                'name' => 'طالب رقم ' . ($i + 1),
-                'email' => 'student' . ($i + 1) . '@example.com',
-                'password' => bcrypt('1'),
-                'student_id' => '123456' . ($i + 1),
-                'gpa' => rand(0, 100) / 10,
-            ]);
-        }
     }
 }
