@@ -25,6 +25,9 @@ console_command = 'php /var/www/html/artisan tinker'
   SESSION_SECURE_COOKIE = 'true'
   APP_URL = 'https://medical-college.fly.dev'
   APP_NAME = 'نظام مسارات كلية الطب'
+  APP_LOCALE = 'ar'
+  APP_FALLBACK_LOCALE = 'ar'
+  APP_FAKER_LOCALE = 'ar_SA'
 
 [http_service]
   internal_port = 8080
