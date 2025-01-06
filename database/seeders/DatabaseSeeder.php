@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
 
         $saad->assignRole($admin);
 
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 15; $i++) {
             Major::query()->create([
                 'name' => 'مسار رقم ' . ($i + 1),
                 'max_users' => 18,
