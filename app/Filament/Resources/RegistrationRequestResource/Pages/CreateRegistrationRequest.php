@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\RegistrationRequestResource\Pages;
 
 use App\Filament\Resources\RegistrationRequestResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateRegistrationRequest extends CreateRecord
@@ -14,7 +13,7 @@ class CreateRegistrationRequest extends CreateRecord
     {
         $data = parent::mutateFormDataBeforeCreate($data);
 
-        if (!auth()->user()->hasRole('admin')) {
+        if (! auth()->user()->hasRole('admin')) {
             $data['user_id'] = auth()->id();
         }
 

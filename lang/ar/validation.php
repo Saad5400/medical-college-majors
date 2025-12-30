@@ -29,7 +29,7 @@ return [
         'array' => 'يجب أن يحتوي :attribute على عدد من العناصر بين :min و :max',
         'file' => 'يجب أن يكون حجم الملف :attribute بين :min و :max كيلوبايت.',
         'numeric' => 'حقل :attribute يجب ان تكون قيمته بين :min و :max.',
-        'string' => 'يجب أن يحتوي حقل :attribute علي عدد احرف بين :min و :max.'
+        'string' => 'يجب أن يحتوي حقل :attribute علي عدد احرف بين :min و :max.',
     ],
     'boolean' => 'يجب أن تكون قيمة حقل :attribute إما صحيحة أو خاطئة.',
     'can' => 'يحتوي حقل :attribute على قيمة غير مسموح بها.',

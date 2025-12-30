@@ -2,37 +2,42 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\MajorResource\Pages;
-use App\Filament\Resources\MajorResource\RelationManagers;
+use App\Filament\Resources\MajorResource\Pages\CreateMajor;
+use App\Filament\Resources\MajorResource\Pages\EditMajor;
+use App\Filament\Resources\MajorResource\Pages\ListMajors;
+use App\Filament\Resources\MajorResource\RelationManagers\UsersRelationManager;
 use App\Models\Major;
 use App\Models\User;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class MajorResource extends Resource
 {
     protected static ?string $model = Major::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $modelLabel = 'مسار';
+
     protected static ?string $pluralModelLabel = 'المسارات';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->label('المسار')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('max_users')
+                TextInput::make('max_users')
                     ->label('الحد الأقصى لعدد الطلاب')
                     ->required()
                     ->integer()
@@ -44,23 +49,23 @@ class MajorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->label('تاريخ التعديل')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('المسار')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('max_users')
+                TextColumn::make('max_users')
                     ->label('الحد الأقصى لعدد الطلاب')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('first_choice_users_count')
+                TextColumn::make('first_choice_users_count')
                     ->label('عدد الطلاب الذين إختاروه كأول رغبة')
                     ->getStateUsing(function (Major $record) {
                         $count = 0;
@@ -73,7 +78,7 @@ class MajorResource extends Resource
                         return $count;
                     })
                     ->sortable(),
-                Tables\Columns\TextColumn::make('users_count')
+                TextColumn::make('users_count')
                     ->label('عدد الطلاب')
                     ->getStateUsing(function (Major $record) {
                         return $record->users()->count();
@@ -84,11 +89,11 @@ class MajorResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('distribute')
+                Action::make('distribute')
                     ->label('توزيع الطلاب على المسارات')
                     ->action(function () {
                         // Reset all users' major_id
@@ -121,11 +126,11 @@ class MajorResource extends Resource
                             ->title('تم توزيع الطلاب على المسارات')
                             ->success()
                             ->send();
-                    })
+                    }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -133,16 +138,16 @@ class MajorResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\UsersRelationManager::class,
+            UsersRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMajors::route('/'),
-            'create' => Pages\CreateMajor::route('/create'),
-            'edit' => Pages\EditMajor::route('/{record}/edit'),
+            'index' => ListMajors::route('/'),
+            'create' => CreateMajor::route('/create'),
+            'edit' => EditMajor::route('/{record}/edit'),
         ];
     }
 }

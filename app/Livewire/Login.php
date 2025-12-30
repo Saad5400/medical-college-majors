@@ -8,9 +8,9 @@ use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
-use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
+use Filament\Schemas\Components\Component;
 
-class Login extends \Filament\Pages\Auth\Login
+class Login extends \Filament\Auth\Pages\Login
 {
     public function mount(): void
     {
@@ -21,7 +21,7 @@ class Login extends \Filament\Pages\Auth\Login
         $this->form->fill();
     }
 
-    public function authenticate(): ?LoginResponseContract
+    public function authenticate(): ?\Filament\Auth\Http\Responses\Contracts\LoginResponse
     {
         try {
             $this->rateLimit(5);
@@ -41,10 +41,10 @@ class Login extends \Filament\Pages\Auth\Login
 
         session()->regenerate();
 
-        return new LoginResponse();
+        return new LoginResponse;
     }
 
-    protected function getEmailFormComponent(): \Filament\Forms\Components\Component
+    protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')
             ->label(__('filament-panels::pages/auth/register.form.email.label'))
@@ -55,7 +55,7 @@ class Login extends \Filament\Pages\Auth\Login
             ->maxLength(255);
     }
 
-    protected function getRememberFormComponent(): \Filament\Forms\Components\Component
+    protected function getRememberFormComponent(): Component
     {
         return Checkbox::make('remember')
             ->label(__('filament-panels::pages/auth/login.form.remember.label'))
