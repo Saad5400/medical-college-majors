@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/home/saad/.config/herd-lite/bin/php",
+            "args": [
+                "/home/saad/medical-college-majors/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
