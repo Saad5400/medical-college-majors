@@ -61,7 +61,6 @@ class Register extends \Filament\Pages\Auth\Register
                 $this->makeForm()
                     ->schema([
                         $this->getNameFormComponent(),
-                        $this->getGpaFormComponent(),
                         $this->getStudentIdFormComponent(),
                         $this->getEmailFormComponent(),
                         $this->getPasswordFormComponent(),
@@ -70,18 +69,6 @@ class Register extends \Filament\Pages\Auth\Register
                     ->statePath('data'),
             ),
         ];
-    }
-
-    protected function getGpaFormComponent(): \Filament\Forms\Components\Component
-    {
-        return TextInput::make('gpa')
-            ->label('المعدل التراكمي')
-            ->placeholder('0.00')
-            ->required()
-            ->numeric()
-            ->minValue(0)
-            ->maxValue(4)
-            ->live(onBlur: true);
     }
 
     protected function getStudentIdFormComponent(): \Filament\Forms\Components\Component
@@ -102,7 +89,9 @@ class Register extends \Filament\Pages\Auth\Register
         return TextInput::make('email')
             ->label(__('filament-panels::pages/auth/register.form.email.label'))
             ->email()
-            ->regex('/^s[0-9]+@uqu.edu.sa/')
+            ->regex('/^[a-zA-Z0-9._%+-]+@uqu\.edu\.sa$/')
+            ->validationAttribute('البريد الإلكتروني')
+            ->helperText('يجب أن يكون البريد الإلكتروني بصيغة @uqu.edu.sa')
             ->placeholder('s000000@uqu.edu.sa')
             ->required()
             ->maxLength(255)
