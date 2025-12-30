@@ -12,7 +12,7 @@
         </div>
 
         <div class="mt-4">
-            <form method="POST" action="{{ route('filament.auth.logout') }}">
+            <form method="POST" action="{{ route('filament.admin.auth.logout') }}">
                 @csrf
                 <x-filament::button type="submit" color="gray">
                     تسجيل الخروج

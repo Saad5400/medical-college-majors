@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
-use App\Livewire\EmailVerificationPrompt;
 use App\Livewire\Register;
 use Devonab\FilamentEasyFooter\EasyFooterPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -45,7 +44,6 @@ class AdminPanelProvider extends PanelProvider
             ->path('')
             ->login()
             ->registration(Register::class)
-            ->emailVerification(EmailVerificationPrompt::class)
             ->colors([
                 'primary' => Color::Purple,
             ])

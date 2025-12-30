@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Filament\Pages;
 
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
@@ -9,7 +9,24 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class EmailVerificationPrompt extends SimplePage
 {
-    protected static string $view = 'livewire.email-verification-prompt';
+    protected static string $view = 'filament.pages.email-verification-prompt';
+
+    protected static bool $shouldRegisterNavigation = false;
+
+    public function mount(): void
+    {
+        $user = auth()->user();
+
+        // Redirect admins to their dashboard
+        if ($user && $user->hasRole('admin')) {
+            $this->redirect(\App\Filament\Resources\MajorResource::getUrl());
+        }
+
+        // Redirect verified users to home
+        if ($user && $user->hasVerifiedEmail()) {
+            $this->redirect('/');
+        }
+    }
 
     public function getTitle(): string | Htmlable
     {
@@ -42,5 +59,10 @@ class EmailVerificationPrompt extends SimplePage
             ->body('تم إرسال رسالة تأكيد جديدة إلى بريدك الإلكتروني.')
             ->success()
             ->send();
+    }
+
+    public static function getRoutePath(): string
+    {
+        return '/email/verify';
     }
 }
