@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
 
         for ($i = 0; $i < 15; $i++) {
             Major::query()->create([
-                'name' => 'مسار رقم ' . ($i + 1),
+                'name' => 'مسار رقم '.($i + 1),
                 'max_users' => 18,
             ]);
         }

@@ -2,66 +2,72 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
+use App\Filament\Resources\UserResource\Pages\EditUser;
+use App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Models\User;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $modelLabel = 'مستخدم';
+
     protected static ?string $pluralModelLabel = 'المستخدمين';
 
-    protected static ?string $navigationIcon = 'heroicon-o-user';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->label('الاسم')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('email')
+                TextInput::make('email')
                     ->label('البريد الإلكتروني')
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('gpa')
+                TextInput::make('gpa')
                     ->label('المعدل')
                     ->numeric()
                     ->default(null),
-                Forms\Components\TextInput::make('student_id')
+                TextInput::make('student_id')
                     ->label('رقم الطالب')
                     ->maxLength(255)
                     ->default(null),
-                Forms\Components\Select::make('roles')
+                Select::make('roles')
                     ->label('الأدوار')
                     ->relationship('roles', 'name')
                     ->searchable()
                     ->preload()
                     ->multiple(),
-                Forms\Components\Group::make()
+                Group::make()
                     ->columnSpanFull()
                     ->schema([
-                        Forms\Components\Toggle::make('change_password')
+                        Toggle::make('change_password')
                             ->label('تغيير كلمة المرور')
                             ->live()
-                            ->default($form->getOperation() === 'create')
-                            ->hidden($form->getOperation() === 'create'),
-                        Forms\Components\Group::make()
-                            ->schema(function (Forms\Get $get) {
+                            ->default($schema->getOperation() === 'create')
+                            ->hidden($schema->getOperation() === 'create'),
+                        Group::make()
+                            ->schema(function (Get $get) {
                                 if ($get('change_password')) {
                                     return [
-                                        Forms\Components\TextInput::make('password')
+                                        TextInput::make('password')
                                             ->label('كلمة المرور')
                                             ->password()
                                             ->required()
@@ -69,8 +75,9 @@ class UserResource extends Resource
                                             ->maxLength(255),
                                     ];
                                 }
+
                                 return [];
-                            })
+                            }),
                     ]),
             ]);
     }
@@ -79,38 +86,38 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->label('تاريخ التعديل')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('gpa')
+                TextColumn::make('gpa')
                     ->label('المعدل')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('student_id')
+                TextColumn::make('student_id')
                     ->label('رقم الطالب')
                     ->searchable(),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -125,9 +132,8 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            'index' => ListUsers::route('/'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

@@ -16,6 +16,7 @@ use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
+use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -23,7 +24,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Rmsramos\Activitylog\ActivitylogPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -32,7 +32,7 @@ class AdminPanelProvider extends PanelProvider
         parent::register();
         FilamentView::registerRenderHook(
             PanelsRenderHook::SCRIPTS_BEFORE,
-            fn(): string => Blade::render("@vite('resources/js/filament-app.js')")
+            fn (): string => Blade::render("@vite('resources/js/filament-app.js')")
         );
     }
 
@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->login()
-            ->registration(Register::class)
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Purple,
             ])
@@ -54,7 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
+                AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
@@ -72,12 +72,6 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
-            ->plugin(
-                ActivitylogPlugin::make()
-                    ->label('سجل نشاط')
-                    ->pluralLabel('سجلات النشاط')
-                    ->authorize(fn() => auth()->user()->hasRole('admin'))
-            )
             ->plugin(
                 EasyFooterPlugin::make()
                     ->withLoadTime()

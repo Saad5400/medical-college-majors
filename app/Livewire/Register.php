@@ -4,16 +4,15 @@ namespace App\Livewire;
 
 use App\Http\Responses\RegistrationResponse;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
-use Filament\Actions\Action;
-use Filament\Events\Auth\Registered;
+use Filament\Auth\Events\Registered;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Set;
-use Filament\Http\Responses\Auth\Contracts\RegistrationResponse as RegistrationResponseContract;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Set;
 
-class Register extends \Filament\Pages\Auth\Register
+class Register extends \Filament\Auth\Pages\Register
 {
-    public function register(): ?RegistrationResponseContract
+    public function register(): ?\Filament\Auth\Http\Responses\Contracts\RegistrationResponse
     {
         try {
             $this->rateLimit(2);
@@ -51,7 +50,7 @@ class Register extends \Filament\Pages\Auth\Register
 
         session()->regenerate();
 
-        return new RegistrationResponse();
+        return new RegistrationResponse;
     }
 
     protected function getForms(): array
@@ -59,7 +58,7 @@ class Register extends \Filament\Pages\Auth\Register
         return [
             'form' => $this->form(
                 $this->makeForm()
-                    ->schema([
+                    ->components([
                         $this->getNameFormComponent(),
                         $this->getGpaFormComponent(),
                         $this->getStudentIdFormComponent(),
@@ -72,7 +71,7 @@ class Register extends \Filament\Pages\Auth\Register
         ];
     }
 
-    protected function getGpaFormComponent(): \Filament\Forms\Components\Component
+    protected function getGpaFormComponent(): Component
     {
         return TextInput::make('gpa')
             ->label('المعدل التراكمي')
@@ -84,7 +83,7 @@ class Register extends \Filament\Pages\Auth\Register
             ->live(onBlur: true);
     }
 
-    protected function getStudentIdFormComponent(): \Filament\Forms\Components\Component
+    protected function getStudentIdFormComponent(): Component
     {
         return TextInput::make('student_id')
             ->label('الرقم الجامعي')
@@ -92,12 +91,12 @@ class Register extends \Filament\Pages\Auth\Register
             ->required()
             ->live(onBlur: true)
             ->afterStateUpdated(function (Set $set, $state) {
-                $set('email', 's' . $state . '@uqu.edu.sa');
+                $set('email', 's'.$state.'@uqu.edu.sa');
             })
             ->unique($this->getUserModel());
     }
 
-    protected function getEmailFormComponent(): \Filament\Forms\Components\Component
+    protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')
             ->label(__('filament-panels::pages/auth/register.form.email.label'))

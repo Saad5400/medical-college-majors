@@ -1,45 +1,36 @@
-@php
-    use Filament\Support\Enums\MaxWidth;
-
-@endphp
 <footer
-    @class([
-        'fi-footer my-3 flex flex-wrap items-center justify-center text-sm text-gray-500 dark:text-gray-400',
-        'border-t border-gray-200 dark:border-gray-700 text-center p-2' => $footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer' || $borderTopEnabled === true,
-        'fi-sidebar gap-2' => $footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer',
-        'gap-4' => $footerPosition !== 'sidebar' && $footerPosition !== 'sidebar.footer',
-        'mx-auto w-full px-4 md:px-6 lg:px-8' => $footerPosition === 'footer',
-        match ($maxContentWidth ??= (filament()->getMaxContentWidth() ?? MaxWidth::SevenExtraLarge)) {
-            MaxWidth::ExtraSmall, 'xs' => 'max-w-xs',
-            MaxWidth::Small, 'sm' => 'max-w-sm',
-            MaxWidth::Medium, 'md' => 'max-w-md',
-            MaxWidth::Large, 'lg' => 'max-w-lg',
-            MaxWidth::ExtraLarge, 'xl' => 'max-w-xl',
-            MaxWidth::TwoExtraLarge, '2xl' => 'max-w-2xl',
-            MaxWidth::ThreeExtraLarge, '3xl' => 'max-w-3xl',
-            MaxWidth::FourExtraLarge, '4xl' => 'max-w-4xl',
-            MaxWidth::FiveExtraLarge, '5xl' => 'max-w-5xl',
-            MaxWidth::SixExtraLarge, '6xl' => 'max-w-6xl',
-            MaxWidth::SevenExtraLarge, '7xl' => 'max-w-7xl',
-            MaxWidth::Full, 'full' => 'max-w-full',
-            MaxWidth::MinContent, 'min' => 'max-w-min',
-            MaxWidth::MaxContent, 'max' => 'max-w-max',
-            MaxWidth::FitContent, 'fit' => 'max-w-fit',
-            MaxWidth::Prose, 'prose' => 'max-w-prose',
-            MaxWidth::ScreenSmall, 'screen-sm' => 'max-w-screen-sm',
-            MaxWidth::ScreenMedium, 'screen-md' => 'max-w-screen-md',
-            MaxWidth::ScreenLarge, 'screen-lg' => 'max-w-screen-lg',
-            MaxWidth::ScreenExtraLarge, 'screen-xl' => 'max-w-screen-xl',
-            MaxWidth::ScreenTwoExtraLarge, 'screen-2xl' => 'max-w-screen-2xl',
-            default => $maxContentWidth,
-        } => $footerPosition === 'footer',
-    ])
+    style="
+        margin: 0.75rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-align: center;
+        padding: {{ ($footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer' || $borderTopEnabled === true) ? '0.5rem' : '0' }};
+        border-top: {{ ($footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer' || $borderTopEnabled === true) ? '1px solid #e5e7eb' : 'none' }};
+        gap: {{ ($footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer') ? '0.5rem' : '1rem' }};
+        width: {{ $footerPosition === 'footer' ? '100%' : 'auto' }};
+        margin-left: {{ $footerPosition === 'footer' ? 'auto' : '0' }};
+        margin-right: {{ $footerPosition === 'footer' ? 'auto' : '0' }};
+        padding-left: {{ $footerPosition === 'footer' ? '1rem' : '0' }};
+        padding-right: {{ $footerPosition === 'footer' ? '1rem' : '0' }};
+    "
     dir="ltr"
 >
-    <span @class(['flex gap-2' => $isHtmlSentence])>&copy; {{ now()->format('Y') }} -
+    <span
+        style="
+            display: {{ $isHtmlSentence ? 'flex' : 'inline' }};
+            gap: {{ $isHtmlSentence ? '0.5rem' : '0' }};
+        "
+    >
+        &copy; {{ now()->format('Y') }} -
         @if($sentence)
             @if($isHtmlSentence)
-                <span class="flex">{!! $sentence !!}</span>
+                <span style="display: flex;">
+                    {!! $sentence !!}
+                </span>
             @else
                 {{ $sentence }}
             @endif
@@ -56,35 +47,58 @@
     @endif
 
     @if($logoPath)
-        <span class="flex items-center">
+        <span style="display: flex; align-items: center;">
             @if($logoUrl)
-                <a href="{{ $logoUrl }}" class="inline-flex">
-                    @endif
-                    <img
-                        src="{{ $logoPath }}"
-                        alt="Logo"
-                        class="w-auto object-contain"
-                        style="height: {{ $logoHeight }}px;"
-                    >
-                    @if($logoUrl)
+                <a href="{{ $logoUrl }}" style="display: inline-flex;">
+            @endif
+
+            <img
+                src="{{ $logoPath }}"
+                alt="Logo"
+                style="
+                    height: {{ $logoHeight }}px;
+                    width: auto;
+                    object-fit: contain;
+                "
+            >
+
+            @if($logoUrl)
                 </a>
             @endif
         </span>
     @endif
 
     @if($loadTime)
-        @if($footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer')
-            <span class="w-full">{{ $loadTimePrefix ?? '' }} {{ $loadTime }}s</span>
-        @else
-            <span>{{ $loadTimePrefix ?? '' }} {{ $loadTime }}s</span>
-        @endif
+        <span
+            style="{{ ($footerPosition === 'sidebar' || $footerPosition === 'sidebar.footer') ? 'width: 100%;' : '' }}">
+            {{ $loadTimePrefix ?? '' }} {{ $loadTime }}s
+        </span>
     @endif
 
     @if(count($links) > 0)
-        <ul class="gap-2 flex">
+        <ul
+            style="
+                display: flex;
+                gap: 0.5rem;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            "
+        >
             @foreach($links as $link)
                 <li>
-                    <a href="{{ $link['url'] }}" class="text-primary-600 dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-300" target="_blank">{{ $link['title'] }}</a>
+                    <a
+                        href="{{ $link['url'] }}"
+                        target="_blank"
+                        style="
+                            color: #2563eb;
+                            text-decoration: none;
+                        "
+                        onmouseover="this.style.textDecoration='underline'"
+                        onmouseout="this.style.textDecoration='none'"
+                    >
+                        {{ $link['title'] }}
+                    </a>
                 </li>
             @endforeach
         </ul>

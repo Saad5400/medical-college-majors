@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\RegistrationRequestResource\Pages;
 
 use App\Filament\Resources\RegistrationRequestResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditRegistrationRequest extends EditRecord
@@ -13,7 +13,7 @@ class EditRegistrationRequest extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

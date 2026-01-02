@@ -3,17 +3,23 @@
 namespace App\Livewire\Request;
 
 use App\Filament\Resources\RegistrationRequestResource;
-use App\Models\Major;
 use App\Models\RegistrationRequest;
 use App\Models\User;
-use Filament\Forms;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Schemas\Schema;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
-class Create extends Component implements Forms\Contracts\HasForms
+class Create extends Component implements HasActions, HasForms
 {
-    use Forms\Concerns\InteractsWithForms;
+    use InteractsWithActions;
+    use InteractsWithForms;
 
     public ?RegistrationRequest $record;
+
     public array $data = [];
 
     public function mount(): void
@@ -23,17 +29,17 @@ class Create extends Component implements Forms\Contracts\HasForms
         $this->form->fill($this->record?->toArray());
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('livewire.request.create');
     }
 
-    public function form(Forms\Form $form): Forms\Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->model(RegistrationRequest::class)
             ->statePath('data')
-            ->schema(RegistrationRequestResource::getFormFields());
+            ->components(RegistrationRequestResource::getFormFields());
     }
 
     public function upsertRequest(): void

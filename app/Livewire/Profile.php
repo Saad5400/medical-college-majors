@@ -3,18 +3,22 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Set;
-use Filament\Notifications\Notification;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Livewire\Component;
-use Filament\Forms;
 
-class Profile extends Component implements Forms\Contracts\HasForms
+class Profile extends Component implements HasActions, HasForms
 {
-    use Forms\Concerns\InteractsWithForms;
+    use InteractsWithActions;
+    use InteractsWithForms;
 
     public ?User $record;
+
     public array $data = [];
 
     public function mount(): void
@@ -23,13 +27,13 @@ class Profile extends Component implements Forms\Contracts\HasForms
         $this->form->fill($this->record->toArray());
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->model($this->record)
             ->statePath('data')
             ->columns(['sm' => 2])
-            ->schema([
+            ->components([
                 TextInput::make('name')
                     ->label(__('filament-panels::pages/auth/register.form.name.label'))
                     ->required()
@@ -49,7 +53,7 @@ class Profile extends Component implements Forms\Contracts\HasForms
                     ->required()
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (Set $set, $state) {
-                        $set('email', 's' . $state . '@uqu.edu.sa');
+                        $set('email', 's'.$state.'@uqu.edu.sa');
                     })
                     ->unique(User::class),
                 TextInput::make('email')
@@ -71,6 +75,7 @@ class Profile extends Component implements Forms\Contracts\HasForms
     public function logout()
     {
         auth()->logout();
+
         return redirect()->route('login');
     }
 
