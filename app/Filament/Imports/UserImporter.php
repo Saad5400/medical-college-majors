@@ -8,6 +8,7 @@ use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 
 class UserImporter extends Importer
 {
@@ -38,13 +39,12 @@ class UserImporter extends Importer
     {
         $studentId = $this->data['student_id'];
         $email = 's'.$studentId.'@uqu.edu.sa';
-        $password = 's'.$studentId.'@uqu.edu.sa';
 
         return User::firstOrNew(['student_id' => $studentId])
             ->fill([
                 'name' => $this->data['name'],
                 'email' => $email,
-                'password' => Hash::make($password),
+                'password' => Hash::make(Str::random(16)),
                 'gpa' => $this->data['gpa'],
             ]);
     }

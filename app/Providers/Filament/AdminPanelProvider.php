@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->login()
-            ->emailVerification()
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Purple,
             ])

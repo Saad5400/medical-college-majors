@@ -56,20 +56,21 @@ RUN chmod 754 /usr/local/bin/start-nginx
 COPY . /var/www/html
 WORKDIR /var/www/html
 
-# 4. Setup application dependencies 
-RUN composer install --optimize-autoloader --no-dev \
-    && mkdir -p storage/logs \
-    && php artisan optimize:clear \
-    && chown -R www-data:www-data /var/www/html \
-    && echo "MAILTO=\"\"\n* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
-    && sed -i='' '/->withMiddleware(function (Middleware \$middleware) {/a\
+# 4. Setup application dependencies
+RUN ls -la composer.json composer.lock && \
+    composer install --optimize-autoloader --no-dev && \
+    ls -la vendor/ && \
+    mkdir -p storage/logs && \
+    php artisan optimize:clear && \
+    php artisan icons:cache && \
+    php artisan filament:cache-components && \
+    php artisan filament:optimize && \
+    chown -R www-data:www-data /var/www/html && \
+    echo "MAILTO=\"\"\n* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel && \
+    sed -i='' '/->withMiddleware(function (Middleware \$middleware) {/a\
         \$middleware->trustProxies(at: "*");\
-    ' bootstrap/app.php; \ 
+    ' bootstrap/app.php; \
     if [ -d .fly ]; then cp .fly/entrypoint.sh /entrypoint; chmod +x /entrypoint; fi;
-
-
-# If we're using Filament v3 and above, run caching commands...
-RUN  php artisan icons:cache && php artisan filament:cache-components && php artisan filament:optimize
 
 
 # Multi-stage build: Build static assets
