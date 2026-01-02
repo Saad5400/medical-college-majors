@@ -10,7 +10,7 @@ console_command = 'php /var/www/html/artisan tinker'
 [build]
   [build.args]
     NODE_VERSION = '18'
-    PHP_VERSION = '8.2'
+    PHP_VERSION = '8.4'
 
 [mounts]
   source="storage_vol"
@@ -30,6 +30,7 @@ console_command = 'php /var/www/html/artisan tinker'
   APP_FAKER_LOCALE = 'ar_SA'
   DB_CONNECTION="sqlite"
   DB_DATABASE="/var/www/html/storage/database/database.sqlite"
+  QUEUE_CONNECTION="database"
 
 [http_service]
   internal_port = 8080
