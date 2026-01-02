@@ -43,7 +43,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->login()
-            ->registration(Register::class)
             ->emailVerification()
             ->colors([
                 'primary' => Color::Purple,

@@ -135,7 +135,9 @@ class RegistrationRequestResource extends Resource
                         })
                         ->required(),
                     Select::make('major_id')
-                        ->label('')
+                        ->label(function (Get $get, $component): ?string {
+                            return 'الرغبة ' . ($component->getParentRepeaterItemIndex() + 1);
+                        })
                         ->live()
                         ->relationship('major', 'name')
                         ->options(function (Get $get) {
