@@ -13,7 +13,10 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -45,6 +48,27 @@ class RegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
+                Fieldset::make('بيانات الطالب')
+                    ->schema([
+                        TextEntry::make('user_name')
+                            ->label('الاسم')
+                            ->state(auth()->user()->name)
+                            ->disabled(),
+                        TextEntry::make('user_email')
+                            ->label('البريد الإلكتروني')
+                            ->state(auth()->user()->email)
+                            ->disabled(),
+                        TextEntry::make('user_student_id')
+                            ->label('الرقم الجامعي')
+                            ->state(auth()->user()->student_id)
+                            ->disabled(),
+                        TextEntry::make('user_gpa')
+                            ->label('المعدل')
+                            ->state(auth()->user()->gpa)
+                            ->disabled(),
+                    ])
+                    ->visible(fn () => ! auth()->user()->hasRole('admin'))
+                    ->columnSpanFull(),
                 Select::make('user_id')
                     ->label('الطالب')
                     ->relationship('user', 'name')
