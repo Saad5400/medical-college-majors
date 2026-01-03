@@ -10,9 +10,11 @@ use App\Models\RegistrationRequest;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -45,6 +47,26 @@ class RegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
+                Fieldset::make('بيانات الطالب')
+                    ->schema([
+                        TextInput::make('user_name')
+                            ->label('الاسم')
+                            ->default(fn () => auth()->user()->name)
+                            ->disabled(),
+                        TextInput::make('user_email')
+                            ->label('البريد الإلكتروني')
+                            ->default(fn () => auth()->user()->email)
+                            ->disabled(),
+                        TextInput::make('user_student_id')
+                            ->label('الرقم الجامعي')
+                            ->default(fn () => auth()->user()->student_id)
+                            ->disabled(),
+                        TextInput::make('user_gpa')
+                            ->label('المعدل')
+                            ->default(fn () => auth()->user()->gpa)
+                            ->disabled(),
+                    ])
+                    ->visible(fn () => ! auth()->user()->hasRole('admin')),
                 Select::make('user_id')
                     ->label('الطالب')
                     ->relationship('user', 'name')
