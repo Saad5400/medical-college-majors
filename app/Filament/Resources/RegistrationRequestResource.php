@@ -10,12 +10,13 @@ use App\Models\RegistrationRequest;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -49,24 +50,25 @@ class RegistrationRequestResource extends Resource
             ->components([
                 Fieldset::make('بيانات الطالب')
                     ->schema([
-                        TextInput::make('user_name')
+                        TextEntry::make('user_name')
                             ->label('الاسم')
-                            ->default(fn () => auth()->user()->name)
+                            ->state(auth()->user()->name)
                             ->disabled(),
-                        TextInput::make('user_email')
+                        TextEntry::make('user_email')
                             ->label('البريد الإلكتروني')
-                            ->default(fn () => auth()->user()->email)
+                            ->state(auth()->user()->email)
                             ->disabled(),
-                        TextInput::make('user_student_id')
+                        TextEntry::make('user_student_id')
                             ->label('الرقم الجامعي')
-                            ->default(fn () => auth()->user()->student_id)
+                            ->state(auth()->user()->student_id)
                             ->disabled(),
-                        TextInput::make('user_gpa')
+                        TextEntry::make('user_gpa')
                             ->label('المعدل')
-                            ->default(fn () => auth()->user()->gpa)
+                            ->state(auth()->user()->gpa)
                             ->disabled(),
                     ])
-                    ->visible(fn () => ! auth()->user()->hasRole('admin')),
+                    ->visible(fn () => ! auth()->user()->hasRole('admin'))
+                    ->columnSpanFull(),
                 Select::make('user_id')
                     ->label('الطالب')
                     ->relationship('user', 'name')
