@@ -13,10 +13,17 @@ return [
     |
     */
 
-    'reset' => 'Your password has been reset!',
-    'sent' => 'We have e-mailed your password reset link!',
-    'throttled' => 'Please wait before retrying.',
-    'token' => 'This password reset token is invalid.',
-    'user' => "We can't find a user with that e-mail address.",
+    'reset' => 'تم تحديث بيانات الدخول الخاصة بك!',
+    'sent' => 'تم إرسال رابط التحديث عبر البريد الإلكتروني!',
+    'throttled' => 'الرجاء الانتظار قبل إعادة المحاولة.',
+    'token' => 'رمز التحقق غير صالح.',
+    'user' => 'لا يمكننا العثور على مستخدم بهذا البريد الإلكتروني.',
+
+    // إشعارات البريد الإلكتروني لتحديث بيانات الدخول
+    'Reset Password Notification' => 'طلب تحديث بيانات الدخول',
+    'You are receiving this email because we received a password reset request for your account.' => 'تلقينا طلباً لتحديث بيانات الدخول لحسابك.',
+    'Reset Password' => 'تحديث بيانات الدخول',
+    'This password reset link will expire in :count minutes.' => 'هذا الرابط صالح لمدة :count دقيقة.',
+    'If you did not request a password reset, no further action is required.' => 'إذا لم تقم بهذا الطلب، يرجى تجاهل هذه الرسالة.',
 
 ];

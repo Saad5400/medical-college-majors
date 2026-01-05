@@ -13,9 +13,17 @@ return [
     |
     */
 
-    'reset' => 'تم إعادة تعيين كلمة المرور الخاصة بك!',
-    'sent' => 'لقد قمنا بإرسال رابط إعادة تعيين كلمة المرور الخاص بك عبر البريد الإلكتروني!',
+    'reset' => 'تم تحديث بيانات الدخول الخاصة بك!',
+    'sent' => 'تم إرسال رابط التحديث عبر البريد الإلكتروني!',
     'throttled' => 'الرجاء الانتظار قبل إعادة المحاولة.',
-    'token' => 'رمز إعادة تعيين كلمة المرور هذا غير صالح.',
+    'token' => 'رمز التحقق غير صالح.',
     'user' => 'لا يمكننا العثور على مستخدم بهذا البريد الإلكتروني.',
+
+    // إشعارات البريد الإلكتروني لتحديث بيانات الدخول
+    'Reset Password Notification' => 'طلب تحديث بيانات الدخول',
+    'You are receiving this email because we received a password reset request for your account.' => 'تلقينا طلباً لتحديث بيانات الدخول لحسابك.',
+    'Reset Password' => 'تحديث بيانات الدخول',
+    'This password reset link will expire in :count minutes.' => 'هذا الرابط صالح لمدة :count دقيقة.',
+    'If you did not request a password reset, no further action is required.' => 'إذا لم تقم بهذا الطلب، يرجى تجاهل هذه الرسالة.',
+
 ];
