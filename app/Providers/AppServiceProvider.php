@@ -18,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind custom Filament reset password notification
         $this->app->bind(FilamentResetPassword::class, function ($app, $params) {
-            return new ResetPasswordNotification(...$params);
+            return new ResetPasswordNotification($params);
         });
     }
 
