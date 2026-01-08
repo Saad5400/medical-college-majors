@@ -45,8 +45,40 @@ class UserImporter extends Importer
                 'name' => $this->data['name'],
                 'email' => $email,
                 'password' => Hash::make(Str::random(16)),
-                'gpa' => $this->data['gpa'],
+                'gpa' => $this->normalizeGpa($this->data['gpa']),
             ]);
+    }
+
+    /**
+     * Normalize GPA value from various formats (Arabic numerals, different decimal separators).
+     */
+    protected function normalizeGpa(mixed $gpa): float|int|string|null
+    {
+        if ($gpa === null || $gpa === '') {
+            return null;
+        }
+
+        $gpa = (string) $gpa;
+
+        // Remove whitespace
+        $gpa = trim($gpa);
+
+        // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
+        $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $gpa = str_replace($arabicNumerals, $westernNumerals, $gpa);
+
+        // Convert Eastern Arabic-Indic numerals (۰-۹) to Western numerals (0-9)
+        $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $gpa = str_replace($easternArabicNumerals, $westernNumerals, $gpa);
+
+        // Replace comma with period for decimal separator
+        $gpa = str_replace(',', '.', $gpa);
+
+        // Remove any remaining non-numeric characters except period
+        $gpa = preg_replace('/[^0-9.]/', '', $gpa);
+
+        return $gpa;
     }
 
     public static function getCompletedNotificationBody(Import $import): string
