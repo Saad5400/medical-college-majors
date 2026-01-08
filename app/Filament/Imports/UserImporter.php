@@ -26,6 +26,10 @@ class UserImporter extends Importer
                 ->requiredMapping()
                 ->rules(['required', 'max:255'])
                 ->example('430748574'),
+            ImportColumn::make('phone_number')
+                ->label('رقم الهاتف')
+                ->rules(['nullable', 'max:255'])
+                ->example('0501234567'),
             ImportColumn::make('gpa')
                 ->label('المعدل (من 4)')
                 ->requiredMapping()
@@ -44,6 +48,7 @@ class UserImporter extends Importer
             ->fill([
                 'name' => $this->data['name'],
                 'email' => $email,
+                'phone_number' => $this->data['phone_number'] ?? null,
                 'password' => Hash::make(Str::random(16)),
                 'gpa' => $this->normalizeGpa($this->data['gpa']),
             ]);
