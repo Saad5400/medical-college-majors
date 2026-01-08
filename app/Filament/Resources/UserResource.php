@@ -41,6 +41,10 @@ class UserResource extends Resource
                     ->email()
                     ->required()
                     ->maxLength(255),
+                TextInput::make('phone_number')
+                    ->label('رقم الهاتف')
+                    ->tel()
+                    ->maxLength(255),
                 TextInput::make('gpa')
                     ->label('المعدل')
                     ->numeric()
@@ -101,6 +105,9 @@ class UserResource extends Resource
                     ->searchable(),
                 TextColumn::make('email')
                     ->label('البريد الإلكتروني')
+                    ->searchable(),
+                TextColumn::make('phone_number')
+                    ->label('رقم الهاتف')
                     ->searchable(),
                 TextColumn::make('gpa')
                     ->label('المعدل')
