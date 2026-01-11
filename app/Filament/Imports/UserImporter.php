@@ -24,7 +24,12 @@ class UserImporter extends Importer
             ImportColumn::make('student_id')
                 ->label('الرقم الجامعي')
                 ->requiredMapping()
-                ->rules(['required', 'max:255'])
+                ->rules(['required', 'string', 'regex:/^[0-9٠-٩۰-۹]+$/', 'min:5', 'max:20'])
+                ->validationMessages([
+                    'student_id.regex' => 'الرقم الجامعي يجب أن يحتوي على أرقام فقط.',
+                    'student_id.min' => 'الرقم الجامعي يجب أن يكون على الأقل 5 أرقام.',
+                    'student_id.max' => 'الرقم الجامعي يجب ألا يزيد عن 20 رقم.',
+                ])
                 ->example('430748574'),
             ImportColumn::make('phone_number')
                 ->label('رقم الهاتف')
@@ -41,7 +46,7 @@ class UserImporter extends Importer
 
     public function resolveRecord(): User
     {
-        $studentId = $this->data['student_id'];
+        $studentId = $this->normalizeStudentId($this->data['student_id']);
         $email = 's'.$studentId.'@uqu.edu.sa';
 
         return User::firstOrNew(['student_id' => $studentId])
@@ -52,6 +57,35 @@ class UserImporter extends Importer
                 'password' => Hash::make(Str::random(16)),
                 'gpa' => $this->normalizeGpa($this->data['gpa']),
             ]);
+    }
+
+    /**
+     * Normalize student ID from Arabic numerals to Western numerals.
+     */
+    protected function normalizeStudentId(mixed $studentId): string
+    {
+        if ($studentId === null || $studentId === '') {
+            return '';
+        }
+
+        $studentId = (string) $studentId;
+
+        // Remove whitespace
+        $studentId = trim($studentId);
+
+        // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
+        $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $studentId = str_replace($arabicNumerals, $westernNumerals, $studentId);
+
+        // Convert Eastern Arabic-Indic numerals (۰-۹) to Western numerals (0-9)
+        $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $studentId = str_replace($easternArabicNumerals, $westernNumerals, $studentId);
+
+        // Remove any non-numeric characters
+        $studentId = preg_replace('/[^0-9]/', '', $studentId);
+
+        return $studentId;
     }
 
     /**
@@ -88,10 +122,16 @@ class UserImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'تم استيراد '.Number::format($import->successful_rows).' طالب بنجاح.';
+        $body = '**نتائج الاستيراد:**'."\n\n";
+        $body .= '✅ تم استيراد '.Number::format($import->successful_rows).' طالب بنجاح.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' '.Number::format($failedRowsCount).' صف فشل استيراده.';
+            $body .= "\n\n".'❌ فشل استيراد '.Number::format($failedRowsCount).' صف.';
+            $body .= "\n\n".'**الأخطاء الشائعة:**'."\n";
+            $body .= '• تأكد من أن الرقم الجامعي يحتوي على أرقام فقط'."\n";
+            $body .= '• تأكد من أن المعدل بين 0 و 4'."\n";
+            $body .= '• تأكد من عدم تكرار الأرقام الجامعية'."\n";
+            $body .= "\n".'يمكنك تحميل تقرير الأخطاء من صفحة عمليات الاستيراد.';
         }
 
         return $body;

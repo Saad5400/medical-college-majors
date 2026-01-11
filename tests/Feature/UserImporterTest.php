@@ -2,10 +2,17 @@
 
 use App\Filament\Imports\UserImporter;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Filament\Actions\Imports\Models\Import;
 
 beforeEach(function () {
-    $this->importer = new UserImporter();
+    $import = Import::create([
+        'user_id' => User::factory()->create()->id,
+        'file_name' => 'test.csv',
+        'file_path' => 'imports/test.csv',
+        'importer' => UserImporter::class,
+        'total_rows' => 0,
+    ]);
+    $this->importer = new UserImporter($import, [], []);
 });
 
 it('normalizes GPA with Arabic-Indic numerals', function () {
@@ -88,8 +95,16 @@ it('removes non-numeric characters except decimal point', function () {
 });
 
 it('creates user with normalized GPA during import', function () {
+    $import = Import::create([
+        'user_id' => User::factory()->create()->id,
+        'file_name' => 'test.csv',
+        'file_path' => 'imports/test.csv',
+        'importer' => UserImporter::class,
+        'total_rows' => 0,
+    ]);
+
     // Create a UserImporter instance with mocked data
-    $importer = new class extends UserImporter
+    $importer = new class($import, [], []) extends UserImporter
     {
         public array $data = [
             'name' => 'أحمد محمد',
@@ -122,4 +137,96 @@ it('handles all Arabic numeral combinations', function () {
     foreach ($testCases as $input => $expected) {
         expect($method->invoke($this->importer, $input))->toBe($expected);
     }
+});
+
+it('normalizes student ID with Arabic-Indic numerals', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // Arabic-Indic numerals: ٤٣٠٧٤٨٥٧٤ should become 430748574
+    $result = $method->invoke($this->importer, '٤٣٠٧٤٨٥٧٤');
+    expect($result)->toBe('430748574');
+});
+
+it('normalizes student ID with Eastern Arabic-Indic numerals', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // Eastern Arabic-Indic numerals: ۴۳۰۷۴۸۵۷۴ should become 430748574
+    $result = $method->invoke($this->importer, '۴۳۰۷۴۸۵۷۴');
+    expect($result)->toBe('430748574');
+});
+
+it('normalizes student ID with whitespace', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // With whitespace: " 430748574 " should become "430748574"
+    $result = $method->invoke($this->importer, ' 430748574 ');
+    expect($result)->toBe('430748574');
+});
+
+it('removes non-numeric characters from student ID', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // With extra characters: "430-748-574" should become "430748574"
+    $result = $method->invoke($this->importer, '430-748-574');
+    expect($result)->toBe('430748574');
+});
+
+it('generates correct email from student ID', function () {
+    $import = Import::create([
+        'user_id' => User::factory()->create()->id,
+        'file_name' => 'test.csv',
+        'file_path' => 'imports/test.csv',
+        'importer' => UserImporter::class,
+        'total_rows' => 0,
+    ]);
+
+    // Create a UserImporter instance with mocked data
+    $importer = new class($import, [], []) extends UserImporter
+    {
+        public array $data = [
+            'name' => 'أحمد محمد',
+            'student_id' => '٤٣٠٧٤٨٥٧٤', // Arabic numerals
+            'gpa' => '3.75',
+        ];
+    };
+
+    $user = $importer->resolveRecord();
+
+    expect($user->student_id)->toBe('430748574')
+        ->and($user->email)->toBe('s430748574@uqu.edu.sa');
+});
+
+it('normalizes student ID in resolveRecord', function () {
+    $import = Import::create([
+        'user_id' => User::factory()->create()->id,
+        'file_name' => 'test.csv',
+        'file_path' => 'imports/test.csv',
+        'importer' => UserImporter::class,
+        'total_rows' => 0,
+    ]);
+
+    // Create a UserImporter instance with mocked data containing Arabic numerals
+    $importer = new class($import, [], []) extends UserImporter
+    {
+        public array $data = [
+            'name' => 'محمد علي',
+            'student_id' => '٤٤٤٤٤٤٤', // Arabic numerals: ٤٤٤٤٤٤٤
+            'gpa' => '3.50',
+        ];
+    };
+
+    $user = $importer->resolveRecord();
+
+    expect($user->student_id)->toBe('4444444')
+        ->and($user->email)->toBe('s4444444@uqu.edu.sa')
+        ->and($user->name)->toBe('محمد علي')
+        ->and($user->gpa)->toBe('3.50');
 });

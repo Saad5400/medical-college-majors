@@ -13,7 +13,6 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Fieldset;
@@ -160,7 +159,7 @@ class RegistrationRequestResource extends Resource
                         ->required(),
                     Select::make('major_id')
                         ->label(function (Get $get, $component): ?string {
-                            return 'الرغبة ' . ($component->getParentRepeaterItemIndex() + 1);
+                            return 'الرغبة '.($component->getParentRepeaterItemIndex() + 1);
                         })
                         ->live()
                         ->relationship('major', 'name')
