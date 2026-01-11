@@ -25,14 +25,9 @@ class UserImporter extends Importer
                 ->label('الرقم الجامعي')
                 ->requiredMapping()
                 ->castStateUsing(function (string $state): string {
-                    return $this->normalizeStudentId($state);
+                    return static::normalizeStudentId($state);
                 })
                 ->rules(['required', 'string', 'regex:/^[0-9]+$/', 'min:5', 'max:20'])
-                ->validationMessages([
-                    'student_id.regex' => 'الرقم الجامعي يجب أن يحتوي على أرقام فقط.',
-                    'student_id.min' => 'الرقم الجامعي يجب أن يكون على الأقل 5 أرقام.',
-                    'student_id.max' => 'الرقم الجامعي يجب ألا يزيد عن 20 رقم.',
-                ])
                 ->example('430748574'),
             ImportColumn::make('phone_number')
                 ->label('رقم الهاتف')
@@ -42,7 +37,7 @@ class UserImporter extends Importer
                 ->label('المعدل (من 4)')
                 ->requiredMapping()
                 ->castStateUsing(function (string $state): ?string {
-                    return $this->normalizeGpa($state);
+                    return static::normalizeGpa($state);
                 })
                 ->numeric()
                 ->rules(['required', 'numeric', 'min:0', 'max:4'])
@@ -53,7 +48,7 @@ class UserImporter extends Importer
     public function resolveRecord(): User
     {
         // Normalize student_id (as fallback, castStateUsing() should have already normalized it)
-        $studentId = $this->normalizeStudentId($this->data['student_id']);
+        $studentId = static::normalizeStudentId($this->data['student_id']);
         $email = 's'.$studentId.'@uqu.edu.sa';
 
         return User::firstOrNew(['student_id' => $studentId])
@@ -63,14 +58,14 @@ class UserImporter extends Importer
                 'phone_number' => $this->data['phone_number'] ?? null,
                 'password' => Hash::make(Str::random(16)),
                 // Normalize GPA (as fallback, castStateUsing() should have already normalized it)
-                'gpa' => $this->normalizeGpa($this->data['gpa']),
+                'gpa' => static::normalizeGpa($this->data['gpa']),
             ]);
     }
 
     /**
      * Normalize student ID from various formats (emails, prefixed IDs, Arabic numerals).
      */
-    protected function normalizeStudentId(mixed $studentId): string
+    protected static function normalizeStudentId(mixed $studentId): string
     {
         if ($studentId === null || $studentId === '') {
             return '';
@@ -109,7 +104,7 @@ class UserImporter extends Importer
     /**
      * Normalize GPA value from various formats (Arabic numerals, different decimal separators).
      */
-    protected function normalizeGpa(mixed $gpa): float|int|string|null
+    protected static function normalizeGpa(mixed $gpa): float|int|string|null
     {
         if ($gpa === null || $gpa === '') {
             return null;
