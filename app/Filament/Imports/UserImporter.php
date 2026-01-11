@@ -24,7 +24,10 @@ class UserImporter extends Importer
             ImportColumn::make('student_id')
                 ->label('الرقم الجامعي')
                 ->requiredMapping()
-                ->rules(['required', 'string', 'regex:/^[0-9٠-٩۰-۹]+$/', 'min:5', 'max:20'])
+                ->castStateUsing(function (string $state): string {
+                    return $this->normalizeStudentId($state);
+                })
+                ->rules(['required', 'string', 'regex:/^[0-9]+$/', 'min:5', 'max:20'])
                 ->validationMessages([
                     'student_id.regex' => 'الرقم الجامعي يجب أن يحتوي على أرقام فقط.',
                     'student_id.min' => 'الرقم الجامعي يجب أن يكون على الأقل 5 أرقام.',
@@ -38,6 +41,9 @@ class UserImporter extends Importer
             ImportColumn::make('gpa')
                 ->label('المعدل (من 4)')
                 ->requiredMapping()
+                ->castStateUsing(function (string $state): ?string {
+                    return $this->normalizeGpa($state);
+                })
                 ->numeric()
                 ->rules(['required', 'numeric', 'min:0', 'max:4'])
                 ->example('3.45'),
@@ -46,6 +52,7 @@ class UserImporter extends Importer
 
     public function resolveRecord(): User
     {
+        // Normalize student_id (as fallback, castStateUsing() should have already normalized it)
         $studentId = $this->normalizeStudentId($this->data['student_id']);
         $email = 's'.$studentId.'@uqu.edu.sa';
 
@@ -55,6 +62,7 @@ class UserImporter extends Importer
                 'email' => $email,
                 'phone_number' => $this->data['phone_number'] ?? null,
                 'password' => Hash::make(Str::random(16)),
+                // Normalize GPA (as fallback, castStateUsing() should have already normalized it)
                 'gpa' => $this->normalizeGpa($this->data['gpa']),
             ]);
     }
