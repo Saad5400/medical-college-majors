@@ -24,7 +24,10 @@ class UserImporter extends Importer
             ImportColumn::make('student_id')
                 ->label('الرقم الجامعي')
                 ->requiredMapping()
-                ->rules(['required', 'max:255'])
+                ->castStateUsing(function (string $state): string {
+                    return static::normalizeStudentId($state);
+                })
+                ->rules(['required', 'string', 'regex:/^[0-9]+$/', 'min:5', 'max:20'])
                 ->example('430748574'),
             ImportColumn::make('phone_number')
                 ->label('رقم الهاتف')
@@ -33,6 +36,9 @@ class UserImporter extends Importer
             ImportColumn::make('gpa')
                 ->label('المعدل (من 4)')
                 ->requiredMapping()
+                ->castStateUsing(function (string $state): ?string {
+                    return static::normalizeGpa($state);
+                })
                 ->numeric()
                 ->rules(['required', 'numeric', 'min:0', 'max:4'])
                 ->example('3.45'),
@@ -41,7 +47,8 @@ class UserImporter extends Importer
 
     public function resolveRecord(): User
     {
-        $studentId = $this->data['student_id'];
+        // Normalize student_id (as fallback, castStateUsing() should have already normalized it)
+        $studentId = static::normalizeStudentId($this->data['student_id']);
         $email = 's'.$studentId.'@uqu.edu.sa';
 
         return User::firstOrNew(['student_id' => $studentId])
@@ -50,14 +57,54 @@ class UserImporter extends Importer
                 'email' => $email,
                 'phone_number' => $this->data['phone_number'] ?? null,
                 'password' => Hash::make(Str::random(16)),
-                'gpa' => $this->normalizeGpa($this->data['gpa']),
+                // Normalize GPA (as fallback, castStateUsing() should have already normalized it)
+                'gpa' => static::normalizeGpa($this->data['gpa']),
             ]);
+    }
+
+    /**
+     * Normalize student ID from various formats (emails, prefixed IDs, Arabic numerals).
+     */
+    protected static function normalizeStudentId(mixed $studentId): string
+    {
+        if ($studentId === null || $studentId === '') {
+            return '';
+        }
+
+        $studentId = (string) $studentId;
+
+        // Remove whitespace
+        $studentId = trim($studentId);
+
+        // Extract student ID from email format (e.g., s444444@uqu.edu.sa -> s444444)
+        if (str_contains($studentId, '@')) {
+            $studentId = explode('@', $studentId)[0];
+        }
+
+        // Remove 's' or 'S' prefix if present (e.g., s444444 -> 444444)
+        if (preg_match('/^[sS]/', $studentId)) {
+            $studentId = substr($studentId, 1);
+        }
+
+        // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
+        $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $studentId = str_replace($arabicNumerals, $westernNumerals, $studentId);
+
+        // Convert Eastern Arabic-Indic numerals (۰-۹) to Western numerals (0-9)
+        $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $studentId = str_replace($easternArabicNumerals, $westernNumerals, $studentId);
+
+        // Remove any remaining non-numeric characters
+        $studentId = preg_replace('/[^0-9]/', '', $studentId);
+
+        return $studentId;
     }
 
     /**
      * Normalize GPA value from various formats (Arabic numerals, different decimal separators).
      */
-    protected function normalizeGpa(mixed $gpa): float|int|string|null
+    protected static function normalizeGpa(mixed $gpa): float|int|string|null
     {
         if ($gpa === null || $gpa === '') {
             return null;
@@ -88,10 +135,16 @@ class UserImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'تم استيراد '.Number::format($import->successful_rows).' طالب بنجاح.';
+        $body = '**نتائج الاستيراد:**'."\n\n";
+        $body .= '✅ تم استيراد '.Number::format($import->successful_rows).' طالب بنجاح.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' '.Number::format($failedRowsCount).' صف فشل استيراده.';
+            $body .= "\n\n".'❌ فشل استيراد '.Number::format($failedRowsCount).' صف.';
+            $body .= "\n\n".'**الأخطاء الشائعة:**'."\n";
+            $body .= '• تأكد من أن الرقم الجامعي يحتوي على أرقام فقط'."\n";
+            $body .= '• تأكد من أن المعدل بين 0 و 4'."\n";
+            $body .= '• تأكد من عدم تكرار الأرقام الجامعية'."\n";
+            $body .= "\n".'يمكنك تحميل تقرير الأخطاء من صفحة عمليات الاستيراد.';
         }
 
         return $body;

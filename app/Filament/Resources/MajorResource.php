@@ -7,13 +7,10 @@ use App\Filament\Resources\MajorResource\Pages\EditMajor;
 use App\Filament\Resources\MajorResource\Pages\ListMajors;
 use App\Filament\Resources\MajorResource\RelationManagers\UsersRelationManager;
 use App\Models\Major;
-use App\Models\User;
-use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -96,7 +93,9 @@ class MajorResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultPaginationPageOption(25)
+            ->paginationPageOptions([25, 50, 100]);
     }
 
     public static function getRelations(): array

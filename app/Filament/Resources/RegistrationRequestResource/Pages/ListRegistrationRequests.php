@@ -20,7 +20,9 @@ class ListRegistrationRequests extends ListRecords
                 ->label('مسح طلبات التسجيل')
                 ->requiresConfirmation()
                 ->action(function () {
-                    if (!auth()->user()->hasRole('admin')) return;
+                    if (! auth()->user()->hasRole('admin')) {
+                        return;
+                    }
 
                     // clear all registration requests
                     \App\Models\RegistrationRequest::query()->delete();
