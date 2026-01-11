@@ -60,7 +60,7 @@ class UserImporter extends Importer
     }
 
     /**
-     * Normalize student ID from Arabic numerals to Western numerals.
+     * Normalize student ID from various formats (emails, prefixed IDs, Arabic numerals).
      */
     protected function normalizeStudentId(mixed $studentId): string
     {
@@ -73,6 +73,16 @@ class UserImporter extends Importer
         // Remove whitespace
         $studentId = trim($studentId);
 
+        // Extract student ID from email format (e.g., s444444@uqu.edu.sa -> s444444)
+        if (str_contains($studentId, '@')) {
+            $studentId = explode('@', $studentId)[0];
+        }
+
+        // Remove 's' or 'S' prefix if present (e.g., s444444 -> 444444)
+        if (preg_match('/^[sS]/', $studentId)) {
+            $studentId = substr($studentId, 1);
+        }
+
         // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
         $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
         $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -82,7 +92,7 @@ class UserImporter extends Importer
         $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
         $studentId = str_replace($easternArabicNumerals, $westernNumerals, $studentId);
 
-        // Remove any non-numeric characters
+        // Remove any remaining non-numeric characters
         $studentId = preg_replace('/[^0-9]/', '', $studentId);
 
         return $studentId;

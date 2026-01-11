@@ -230,3 +230,79 @@ it('normalizes student ID in resolveRecord', function () {
         ->and($user->name)->toBe('محمد علي')
         ->and($user->gpa)->toBe('3.50');
 });
+
+it('extracts student ID from full email format', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // Full email: s430748574@uqu.edu.sa should become 430748574
+    $result = $method->invoke($this->importer, 's430748574@uqu.edu.sa');
+    expect($result)->toBe('430748574');
+});
+
+it('extracts student ID from email with uppercase S prefix', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // Full email with uppercase: S430748574@uqu.edu.sa should become 430748574
+    $result = $method->invoke($this->importer, 'S430748574@uqu.edu.sa');
+    expect($result)->toBe('430748574');
+});
+
+it('removes lowercase s prefix from student ID', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // With s prefix: s430748574 should become 430748574
+    $result = $method->invoke($this->importer, 's430748574');
+    expect($result)->toBe('430748574');
+});
+
+it('removes uppercase S prefix from student ID', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // With S prefix: S430748574 should become 430748574
+    $result = $method->invoke($this->importer, 'S430748574');
+    expect($result)->toBe('430748574');
+});
+
+it('extracts student ID from email with Arabic numerals', function () {
+    $reflection = new ReflectionClass($this->importer);
+    $method = $reflection->getMethod('normalizeStudentId');
+    $method->setAccessible(true);
+
+    // Email with Arabic numerals: s٤٣٠٧٤٨٥٧٤@uqu.edu.sa should become 430748574
+    $result = $method->invoke($this->importer, 's٤٣٠٧٤٨٥٧٤@uqu.edu.sa');
+    expect($result)->toBe('430748574');
+});
+
+it('handles email format in resolveRecord', function () {
+    $import = Import::create([
+        'user_id' => User::factory()->create()->id,
+        'file_name' => 'test.csv',
+        'file_path' => 'imports/test.csv',
+        'importer' => UserImporter::class,
+        'total_rows' => 0,
+    ]);
+
+    // Create a UserImporter instance with email format in student_id
+    $importer = new class($import, [], []) extends UserImporter
+    {
+        public array $data = [
+            'name' => 'سارة أحمد',
+            'student_id' => 's5555555@uqu.edu.sa', // Full email format
+            'gpa' => '3.80',
+        ];
+    };
+
+    $user = $importer->resolveRecord();
+
+    expect($user->student_id)->toBe('5555555')
+        ->and($user->email)->toBe('s5555555@uqu.edu.sa')
+        ->and($user->name)->toBe('سارة أحمد');
+});
