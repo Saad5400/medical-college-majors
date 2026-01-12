@@ -67,6 +67,7 @@ export NODE_PATH=$(npm root -g)
 # --- ensure Laravel writable paths (volume may be empty on first boot)
 mkdir -p /app/storage/framework/{cache,sessions,views,livewire-tmp} \
          /app/storage/logs \
+         /app/storage/app/public/screenshots \
          /app/bootstrap/cache
 
 # optional: if you run as www-data in FPM, give it ownership
