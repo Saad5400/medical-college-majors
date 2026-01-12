@@ -86,12 +86,8 @@ mkdir -p /app/storage/framework/{cache,sessions,views} \
 
 # optional: if you run as www-data in FPM, give it ownership
 chown -R www-data:www-data /app/storage /app/bootstrap/cache || true
-# permissive enough for containers
-chmod -R ug+rwX /app/storage /app/bootstrap/cache
-# Ensure livewire-tmp is fully writable for file uploads
-chmod -R 777 /app/storage/app/private/livewire-tmp
-# Screenshots directory needs to be writable by node (running as www-data)
-chmod 777 /app/storage/app/public/screenshots
+# permissive enough for containers - use 777 for all storage to handle volume mount issues
+chmod -R 777 /app/storage /app/bootstrap/cache
 
 # --- Chromium needs writable directories for www-data user
 mkdir -p /tmp/.config /tmp/.cache /tmp/.local/share
