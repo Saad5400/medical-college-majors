@@ -11,6 +11,8 @@ class MajorRegistrationRequest extends Pivot
 {
     use LogsActivity;
 
+    public $incrementing = true;
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();
