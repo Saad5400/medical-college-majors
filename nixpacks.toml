@@ -2,6 +2,20 @@
 nixPkgs = [
     "php84",                  # <--- CHANGED from default php or php82
     "php84Packages.composer", # <--- Ensure composer matches the PHP version
+    # PHP Extensions required for Laravel/Livewire file uploads
+    "php84Extensions.fileinfo",  # Required for MIME type detection
+    "php84Extensions.gd",        # Image processing
+    "php84Extensions.zip",       # ZIP file handling
+    "php84Extensions.curl",      # HTTP requests
+    "php84Extensions.mbstring",  # Multibyte string handling
+    "php84Extensions.intl",      # Internationalization
+    "php84Extensions.pgsql",     # PostgreSQL support
+    "php84Extensions.pdo_pgsql", # PostgreSQL PDO driver
+    "php84Extensions.redis",     # Redis support
+    "php84Extensions.bcmath",    # Arbitrary precision math
+    "php84Extensions.xml",       # XML support
+    "php84Extensions.dom",       # DOM support
+    "php84Extensions.tokenizer", # PHP tokenizer
     "nginx",                  # <-- ADDED (Required, because we removed the defaults)
     "python311Packages.supervisor",
     "nodejs_22",               # Ensure you have node if you removed "..."
