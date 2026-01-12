@@ -65,9 +65,9 @@ export NODE_BINARY=$(readlink -f "$(which node)")
 export NODE_PATH=$(npm root -g)
 
 # --- ensure Laravel writable paths (volume may be empty on first boot)
-mkdir -p /app/storage/framework/{cache,sessions,views,livewire-tmp} \
+mkdir -p /app/storage/framework/{cache,sessions,views} \
          /app/storage/logs \
-         /app/storage/app/{private,public,public/screenshots} \
+         /app/storage/app/{private,private/livewire-tmp,public,public/screenshots} \
          /app/bootstrap/cache
 
 # optional: if you run as www-data in FPM, give it ownership
@@ -75,7 +75,7 @@ chown -R www-data:www-data /app/storage /app/bootstrap/cache || true
 # permissive enough for containers
 chmod -R ug+rwX /app/storage /app/bootstrap/cache
 # Ensure livewire-tmp is fully writable for file uploads
-chmod -R 777 /app/storage/framework/livewire-tmp
+chmod -R 777 /app/storage/app/private/livewire-tmp
 # Screenshots directory needs to be writable by node (running as www-data)
 chmod 777 /app/storage/app/public/screenshots
 
