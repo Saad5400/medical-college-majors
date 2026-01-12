@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\StudentGpaStatsWidget;
+use App\Filament\Widgets\StudentRegistrationStatsWidget;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 use Devonab\FilamentEasyFooter\EasyFooterPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -54,6 +56,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 AccountWidget::class,
+                StudentRegistrationStatsWidget::class,
+                StudentGpaStatsWidget::class,
                 // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
