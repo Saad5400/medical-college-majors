@@ -15,6 +15,10 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Columns\Column;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class MajorResource extends Resource
 {
@@ -45,6 +49,7 @@ class MajorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('users'))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -90,6 +95,15 @@ class MajorResource extends Resource
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportAction::make()
+                    ->label('تصدير المقبولين')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn () => auth()->user()->hasRole('admin'))
+                    ->exports([
+                        ExcelExport::make()
+                            ->withFilename('majors-with-students')
+                            ->withColumns(static::getExportColumns()),
+                    ]),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -112,5 +126,37 @@ class MajorResource extends Resource
             'create' => CreateMajor::route('/create'),
             'edit' => EditMajor::route('/{record}/edit'),
         ];
+    }
+
+    public static function getExportColumns(): array
+    {
+        $columns = [
+            Column::make('name')
+                ->heading('المسار'),
+            Column::make('max_users')
+                ->heading('الحد الأقصى لعدد الطلاب'),
+            Column::make('users_count')
+                ->heading('عدد الطلاب المقبولين')
+                ->getStateUsing(fn (Major $record): int => $record->users->count()),
+            Column::make('accepted_students')
+                ->heading('الطلاب المقبولون')
+                ->getStateUsing(function (Major $record): string {
+                    return $record->users
+                        ->map(function ($user): string {
+                            $details = [
+                                $user->name,
+                                'ID: '.$user->student_id,
+                                'GPA: '.$user->gpa,
+                                'Email: '.$user->email,
+                                'Phone: '.$user->phone_number,
+                            ];
+
+                            return implode(' | ', $details);
+                        })
+                        ->implode("\n");
+                }),
+        ];
+
+        return $columns;
     }
 }
