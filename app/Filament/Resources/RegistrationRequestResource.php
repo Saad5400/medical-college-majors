@@ -21,6 +21,9 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Columns\Column;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class RegistrationRequestResource extends Resource
 {
@@ -82,6 +85,7 @@ class RegistrationRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['majorRegistrationRequests.major', 'user']))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -96,6 +100,15 @@ class RegistrationRequestResource extends Resource
                 TextColumn::make('user.name')
                     ->label('الطالب')
                     ->sortable(),
+                TextColumn::make('user.student_id')
+                    ->label('الرقم الجامعي')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('user.email')
+                    ->label('البريد الإلكتروني')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('user.phone_number')
+                    ->label('رقم الجوال')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.gpa')
                     ->label('المعدل')
                     ->sortable(),
@@ -112,6 +125,15 @@ class RegistrationRequestResource extends Resource
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportAction::make()
+                    ->label('تصدير إلى Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn () => auth()->user()->hasRole('admin'))
+                    ->exports([
+                        ExcelExport::make()
+                            ->withFilename('registration-requests')
+                            ->withColumns(static::getExportColumns()),
+                    ]),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -183,5 +205,34 @@ class RegistrationRequestResource extends Resource
                         ->required(),
                 ]),
         ];
+    }
+
+    public static function getExportColumns(): array
+    {
+        $columns = [
+            Column::make('created_at')
+                ->heading('تاريخ الإنشاء'),
+            Column::make('updated_at')
+                ->heading('تاريخ التعديل'),
+            Column::make('user.name')
+                ->heading('اسم الطالب'),
+            Column::make('user.student_id')
+                ->heading('الرقم الجامعي'),
+            Column::make('user.email')
+                ->heading('البريد الإلكتروني'),
+            Column::make('user.phone_number')
+                ->heading('رقم الجوال'),
+            Column::make('user.gpa')
+                ->heading('المعدل'),
+            Column::make('major_preferences')
+                ->heading('رغبات التسكين')
+                ->formatStateUsing(function ($state, RegistrationRequest $record): string {
+                    return $record->majorRegistrationRequests
+                        ->map(fn ($request) => ($request->sort + 1).' - '.$request->major?->name)
+                        ->implode(' | ');
+                }),
+        ];
+
+        return $columns;
     }
 }
