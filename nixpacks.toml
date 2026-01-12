@@ -86,6 +86,10 @@ chmod -R 777 /tmp/.config /tmp/.cache /tmp/.local/share
 # Make sure nginx can write logs & pid (your nginx logs go elsewhere, but safe)
 mkdir -p /var/log/nginx
 
+# Create nginx client body temp path for file uploads
+mkdir -p /tmp/nginx_client_body
+chmod 777 /tmp/nginx_client_body
+
 # Storage symlink (idempotent)
 php artisan storage:link || true
 
@@ -242,6 +246,14 @@ http {
     tcp_nopush   on;
     server_names_hash_bucket_size 128;
 
+    # Timeouts for file uploads
+    client_body_timeout 300s;
+    client_header_timeout 300s;
+    send_timeout 300s;
+
+    # Temporary path for client body (file uploads)
+    client_body_temp_path /tmp/nginx_client_body;
+
     server {
         listen ${PORT};
         listen [::]:${PORT};
@@ -281,8 +293,14 @@ http {
             include $!{nginx}/conf/fastcgi_params;
             include $!{nginx}/conf/fastcgi.conf;
 
-            # Inertia-specific buffer tweak
-            fastcgi_buffer_size 8k;
+            # Buffer sizes for large requests (Livewire uploads, Inertia)
+            fastcgi_buffer_size 16k;
+            fastcgi_buffers 16 16k;
+            fastcgi_busy_buffers_size 32k;
+
+            # Increased timeouts for file uploads
+            fastcgi_read_timeout 300;
+            fastcgi_send_timeout 300;
         }
 
         location ~ /\.(?!well-known).* {
