@@ -26,9 +26,9 @@ class StudentGpaStatsWidget extends StatsOverviewWidget
         $avgGpa = $studentsQuery->avg('gpa');
 
         return [
-            Stat::make('Min GPA', $this->formatGpa($minGpa)),
-            Stat::make('Avg GPA', $this->formatGpa($avgGpa)),
-            Stat::make('Max GPA', $this->formatGpa($maxGpa)),
+            Stat::make('أقل معدل', $this->formatGpa($minGpa)),
+            Stat::make('متوسط المعدلات', $this->formatGpa($avgGpa)),
+            Stat::make('أقصى معدل', $this->formatGpa($maxGpa)),
         ];
     }
 

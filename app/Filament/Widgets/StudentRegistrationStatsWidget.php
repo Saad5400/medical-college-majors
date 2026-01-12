@@ -34,9 +34,9 @@ class StudentRegistrationStatsWidget extends StatsOverviewWidget
         $studentsWithoutRequests = max($studentCount - $studentsWithRequests, 0);
 
         return [
-            Stat::make('Students', $studentCount),
-            Stat::make('Requests Created', $studentsWithRequests),
-            Stat::make('Requests Missing', $studentsWithoutRequests),
+            Stat::make('الطلاب', $studentCount),
+            Stat::make('طلبات التسجيل', $studentsWithRequests),
+            Stat::make('الطلاب الذين لم يقوموا بإنشاء طلب تسجيل', $studentsWithoutRequests),
         ];
     }
 }

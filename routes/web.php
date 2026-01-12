@@ -10,7 +10,7 @@ Route::get('/', function () {
     }
 
     if ($user->hasRole('admin')) {
-        return redirect(\App\Filament\Resources\MajorResource::getUrl());
+        return redirect(\App\Filament\Pages\Dashboard::getUrl());
     }
 
     if ($user->registrationRequests()->exists()) {
