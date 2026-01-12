@@ -13,7 +13,8 @@ class ResetPasswordNotification extends FilamentResetPassword
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('اعادة تعيين البيانات')
-            ->html(sprintf('<a href="%1$s">%1$s</a>', e($this->url)));
+            ->subject('نظام مسارات الطب')
+            ->line($this->url)
+            ->view('emails.reset-password', ['url' => $this->url]);
     }
 }
