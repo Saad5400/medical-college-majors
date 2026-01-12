@@ -47,19 +47,38 @@ cmds = [
     "chmod +x /assets/start.sh"
 ]
 
+[start]
+cmd = "/assets/start.sh"
+
 [staticAssets]
 "start.sh" = '''
 #!/bin/bash
 set -e
 
+# --- Browsershot / Puppeteer environment variables
+# Use readlink -f to resolve symlinks to actual Nix store paths
+# This ensures www-data can access them (not just root's profile)
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_EXECUTABLE_PATH=$(readlink -f "$(which chromium)")
+export CHROME_PATH=$(readlink -f "$(which chromium)")
+export NODE_BINARY=$(readlink -f "$(which node)")
+export NODE_PATH=$(npm root -g)
+
 # --- ensure Laravel writable paths (volume may be empty on first boot)
-mkdir -p /app/storage/framework/{cache,sessions,views} \
+mkdir -p /app/storage/framework/{cache,sessions,views,livewire-tmp} \
          /app/storage/logs \
          /app/bootstrap/cache
+
 # optional: if you run as www-data in FPM, give it ownership
 chown -R www-data:www-data /app/storage /app/bootstrap/cache || true
 # permissive enough for containers
 chmod -R ug+rwX /app/storage /app/bootstrap/cache
+# Screenshots directory needs to be writable by node (running as www-data)
+chmod 777 /app/storage/app/public/screenshots
+
+# --- Chromium needs writable directories for www-data user
+mkdir -p /tmp/.config /tmp/.cache /tmp/.local/share
+chmod -R 777 /tmp/.config /tmp/.cache /tmp/.local/share
 
 # Make sure nginx can write logs & pid (your nginx logs go elsewhere, but safe)
 mkdir -p /var/log/nginx
