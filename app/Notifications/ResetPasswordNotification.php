@@ -12,13 +12,8 @@ class ResetPasswordNotification extends FilamentResetPassword
      */
     public function toMail($notifiable): MailMessage
     {
-        $expireMinutes = config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
-
         return (new MailMessage)
-            ->subject('طلب تحديث بيانات الدخول')
-            ->line('تلقينا طلباً لتحديث بيانات الدخول لحسابك.')
-            ->action('تحديث بيانات الدخول', $this->url)
-            ->line('هذا الرابط صالح لمدة '.$expireMinutes.' دقيقة.')
-            ->line('إذا لم تقم بهذا الطلب، يرجى تجاهل هذه الرسالة.');
+            ->subject('اعادة تعيين البيانات')
+            ->html(sprintf('<a href="%1$s">%1$s</a>', e($this->url)));
     }
 }
