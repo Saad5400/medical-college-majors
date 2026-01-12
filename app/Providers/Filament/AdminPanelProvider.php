@@ -75,7 +75,6 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->databaseNotifications()
             ->font('Cairo', 'https://fonts.googleapis.com/css2?family=Cairo&display=swap')
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->plugin(

@@ -2,8 +2,6 @@
 nixPkgs = [
     "php84",                  # <--- CHANGED from default php or php82
     "php84Packages.composer", # <--- Ensure composer matches the PHP version
-    "php84Extensions.mysqlnd",
-    "php84Extensions.pdo_mysql",
     "nginx",                  # <-- ADDED (Required, because we removed the defaults)
     "python311Packages.supervisor",
     "nodejs_22",               # Ensure you have node if you removed "..."
