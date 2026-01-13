@@ -15,20 +15,19 @@ class StudentGpaStatsWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $studentsQuery = User::query()
+        // Combine all 3 queries into 1 for better performance
+        $stats = User::query()
             ->whereDoesntHave('roles', function ($query) {
                 $query->where('name', 'admin');
             })
-            ->whereNotNull('gpa');
-
-        $minGpa = $studentsQuery->min('gpa');
-        $maxGpa = $studentsQuery->max('gpa');
-        $avgGpa = $studentsQuery->avg('gpa');
+            ->whereNotNull('gpa')
+            ->selectRaw('MIN(gpa) as min_gpa, MAX(gpa) as max_gpa, AVG(gpa) as avg_gpa')
+            ->first();
 
         return [
-            Stat::make('أقل معدل', $this->formatGpa($minGpa)),
-            Stat::make('متوسط المعدلات', $this->formatGpa($avgGpa)),
-            Stat::make('أقصى معدل', $this->formatGpa($maxGpa)),
+            Stat::make('أقل معدل', $this->formatGpa($stats?->min_gpa)),
+            Stat::make('متوسط المعدلات', $this->formatGpa($stats?->avg_gpa)),
+            Stat::make('أقصى معدل', $this->formatGpa($stats?->max_gpa)),
         ];
     }
 

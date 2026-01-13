@@ -82,6 +82,7 @@ class RegistrationRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'majorRegistrationRequests.major']))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
