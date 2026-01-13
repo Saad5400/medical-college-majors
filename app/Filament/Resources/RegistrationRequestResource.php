@@ -82,6 +82,7 @@ class RegistrationRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['majorRegistrationRequests.major', 'user']))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -96,6 +97,15 @@ class RegistrationRequestResource extends Resource
                 TextColumn::make('user.name')
                     ->label('الطالب')
                     ->sortable(),
+                TextColumn::make('user.student_id')
+                    ->label('الرقم الجامعي')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('user.email')
+                    ->label('البريد الإلكتروني')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('user.phone_number')
+                    ->label('رقم الجوال')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.gpa')
                     ->label('المعدل')
                     ->sortable(),
@@ -184,4 +194,5 @@ class RegistrationRequestResource extends Resource
                 ]),
         ];
     }
+
 }
