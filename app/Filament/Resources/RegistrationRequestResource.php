@@ -103,12 +103,7 @@ class RegistrationRequestResource extends Resource
                     ->sortable(),
                 TextColumn::make('المسارات')
                     ->getStateUsing(fn ($record) => $record->majorRegistrationRequests->pluck('major.name'))
-                    ->label('رغبات التسكين')
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('majorRegistrationRequests.major', function (Builder $query) use ($search) {
-                            $query->where('name', 'ilike', "%{$search}%");
-                        });
-                    }),
+                    ->label('رغبات التسكين'),
             ])
             ->defaultSort('user.gpa', 'desc')
             ->filters([
