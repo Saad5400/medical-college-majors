@@ -7,7 +7,6 @@ use App\Filament\Resources\MajorResource\Pages\EditMajor;
 use App\Filament\Resources\MajorResource\Pages\ListMajors;
 use App\Filament\Resources\MajorResource\RelationManagers\UsersRelationManager;
 use App\Models\Major;
-use App\Models\MajorRegistrationRequest;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -17,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class MajorResource extends Resource
 {
@@ -53,8 +53,9 @@ class MajorResource extends Resource
 
                 // Calculate first_choice_users_count efficiently with a subquery
                 // Find records where sort equals the minimum sort for that registration_request
-                $firstChoiceSubquery = MajorRegistrationRequest::query()
-                    ->selectRaw('major_id, COUNT(*) as count')
+                // Use raw SQL to ensure proper type casting for PostgreSQL
+                $firstChoiceSubquery = DB::table('major_registration_request')
+                    ->selectRaw('major_id::bigint as major_id, COUNT(*)::integer as count')
                     ->whereRaw('sort = (SELECT MIN(mrr2.sort) FROM major_registration_request mrr2 WHERE mrr2.registration_request_id = major_registration_request.registration_request_id)')
                     ->groupBy('major_id');
 
