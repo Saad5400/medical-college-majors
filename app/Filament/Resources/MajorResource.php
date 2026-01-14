@@ -48,19 +48,24 @@ class MajorResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                // Eager load users_count using withCount
-                $query->withCount('users');
+                // Calculate users_count with type casting for PostgreSQL
+                // users.major_id is varchar, majors.id is bigint - need to cast for comparison
+                $query->addSelect([
+                    'users_count' => DB::table('users')
+                        ->selectRaw('COUNT(*)')
+                        ->whereRaw('"users"."major_id" = "majors"."id"::text'),
+                ]);
 
                 // Calculate first_choice_users_count efficiently with a subquery
                 // Find records where sort equals the minimum sort for that registration_request
                 // Use raw SQL to ensure proper type casting for PostgreSQL
                 $firstChoiceSubquery = DB::table('major_registration_request')
-                    ->selectRaw('major_id::bigint as major_id, COUNT(*)::integer as count')
+                    ->selectRaw('major_id::text as major_id, COUNT(*)::integer as count')
                     ->whereRaw('sort = (SELECT MIN(mrr2.sort) FROM major_registration_request mrr2 WHERE mrr2.registration_request_id = major_registration_request.registration_request_id)')
                     ->groupBy('major_id');
 
                 $query->leftJoinSub($firstChoiceSubquery, 'first_choices', function ($join) {
-                    $join->on('majors.id', '=', 'first_choices.major_id');
+                    $join->whereRaw('"majors"."id"::text = "first_choices"."major_id"');
                 })
                     ->addSelect('majors.*')
                     ->addSelect('first_choices.count as first_choice_users_count');
