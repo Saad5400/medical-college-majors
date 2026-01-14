@@ -23,7 +23,7 @@ class ListMajors extends ListRecords
             ExportAction::make()
                 ->exporter(UserExporter::class)
                 ->label('تصدير الطلاب')
-                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')),
+                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('major_id')),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
                 ->action(function () {
