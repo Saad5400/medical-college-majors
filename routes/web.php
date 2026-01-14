@@ -1,11 +1,6 @@
 <?php
 
-use App\Http\Controllers\ExportDownloadController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/filament/exports/{export}/download', [ExportDownloadController::class, 'download'])
-    ->name('filament.exports.download')
-    ->middleware(['auth']);
 
 Route::get('/', function () {
     $user = auth()->user();
