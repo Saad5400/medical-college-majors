@@ -7,6 +7,7 @@ use App\Filament\Resources\MajorResource\Pages\EditMajor;
 use App\Filament\Resources\MajorResource\Pages\ListMajors;
 use App\Filament\Resources\MajorResource\RelationManagers\UsersRelationManager;
 use App\Models\Major;
+use App\Models\MajorRegistrationRequest;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -15,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MajorResource extends Resource
 {
@@ -45,6 +47,23 @@ class MajorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                // Eager load users_count using withCount
+                $query->withCount('users');
+
+                // Calculate first_choice_users_count efficiently with a subquery
+                // Find records where sort equals the minimum sort for that registration_request
+                $firstChoiceSubquery = MajorRegistrationRequest::query()
+                    ->selectRaw('major_id, COUNT(*) as count')
+                    ->whereRaw('sort = (SELECT MIN(mrr2.sort) FROM major_registration_request mrr2 WHERE mrr2.registration_request_id = major_registration_request.registration_request_id)')
+                    ->groupBy('major_id');
+
+                $query->leftJoinSub($firstChoiceSubquery, 'first_choices', function ($join) {
+                    $join->on('majors.id', '=', 'first_choices.major_id');
+                })
+                    ->addSelect('majors.*')
+                    ->addSelect('first_choices.count as first_choice_users_count');
+            })
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -64,22 +83,10 @@ class MajorResource extends Resource
                     ->sortable(),
                 TextColumn::make('first_choice_users_count')
                     ->label('عدد الطلاب الذين إختاروه كأول رغبة')
-                    ->getStateUsing(function (Major $record) {
-                        $count = 0;
-                        foreach ($record->registrationRequests as $registrationRequest) {
-                            if ($registrationRequest->majors()->orderByPivot('sort')->first()->id === $record->id) {
-                                $count++;
-                            }
-                        }
-
-                        return $count;
-                    })
+                    ->default(0)
                     ->sortable(),
                 TextColumn::make('users_count')
                     ->label('عدد الطلاب')
-                    ->getStateUsing(function (Major $record) {
-                        return $record->users()->count();
-                    })
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

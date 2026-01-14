@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MajorResource\Pages;
 
 use App\Filament\Resources\MajorResource;
+use App\Models\Major;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -23,23 +24,35 @@ class ListMajors extends ListRecords
                     // Reset all users' major_id
                     User::query()->update(['major_id' => null]);
 
+                    // Eager load registration requests with majors to avoid N+1
                     $users = User::query()
+                        ->with(['registrationRequests' => function ($query) {
+                            $query->latest()->with(['majors' => function ($majorsQuery) {
+                                $majorsQuery->orderByPivot('sort');
+                            }]);
+                        }])
                         ->orderBy('gpa', 'desc')
                         ->get();
 
+                    // Pre-load majors with their max_users
+                    $majorCapacities = Major::query()->pluck('max_users', 'id')->toArray();
+                    $majorCurrentCounts = [];
+
                     /** @var User $user */
                     foreach ($users as $user) {
-                        if ($user->registrationRequests()->count() === 0) {
+                        $registrationRequest = $user->registrationRequests->first();
+                        if (! $registrationRequest) {
                             continue;
                         }
 
-                        $registrationRequest = $user->registrationRequests()->latest()->first();
-                        $majors = $registrationRequest->majors()->orderByPivot('sort')->get();
+                        $majors = $registrationRequest->majors;
 
                         foreach ($majors as $major) {
-                            if ($major->users()->count() < $major->max_users) {
-                                $user->major()->associate($major);
+                            $currentCount = $majorCurrentCounts[$major->id] ?? 0;
+                            if ($currentCount < $majorCapacities[$major->id]) {
+                                $user->major_id = $major->id;
                                 $user->save();
+                                $majorCurrentCounts[$major->id] = $currentCount + 1;
 
                                 break;
                             }
