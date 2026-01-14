@@ -18,17 +18,17 @@ class UserExporter extends Exporter
     {
         return [
             ExportColumn::make('major.name')
-                ->label('Major'),
+                ->label('المسار'),
             ExportColumn::make('name')
-                ->label('Name'),
+                ->label('الاسم'),
             ExportColumn::make('email')
-                ->label('Email'),
+                ->label('البريد الإلكتروني'),
             ExportColumn::make('student_id')
-                ->label('Student ID'),
+                ->label('الرقم الجامعي'),
             ExportColumn::make('phone_number')
-                ->label('Phone Number'),
+                ->label('رقم الهاتف'),
             ExportColumn::make('gpa')
-                ->label('GPA'),
+                ->label('المعدل'),
         ];
     }
 
@@ -46,10 +46,11 @@ class UserExporter extends Exporter
 
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Your user export has completed and '.Number::format($export->successful_rows).' '.str('row')->plural($export->successful_rows).' exported.';
+        $body = '**نتائج التصدير:**'."\n\n";
+        $body .= '✅ تم تصدير '.Number::format($export->successful_rows).' طالب بنجاح.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
-            $body .= ' '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' failed to export.';
+            $body .= "\n\n".'❌ فشل تصدير '.Number::format($failedRowsCount).' صف.';
         }
 
         return $body;
