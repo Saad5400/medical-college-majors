@@ -29,20 +29,20 @@ class ExportDownloadController extends Controller
             'Invalid export format.'
         );
 
-        // Get the file path
-        $filePath = $export->getFileDirectory() . '/' . $export->getFileName();
+        // Get the file path (file_name includes the directory path)
+        $filePath = $export->file_name;
 
         // Check if file exists
         abort_unless(
-            Storage::disk($export->getFileDisk())->exists($filePath),
+            Storage::disk($export->file_disk)->exists($filePath),
             404,
             'Export file not found.'
         );
 
         // Return the file download response
-        return Storage::disk($export->getFileDisk())->download(
+        return Storage::disk($export->file_disk)->download(
             $filePath,
-            $export->getFileName()
+            basename($filePath)
         );
     }
 }
