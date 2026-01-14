@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\MajorResource\Pages;
 
+use App\Filament\Exports\UserExporter;
 use App\Filament\Resources\MajorResource;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ExportAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -17,6 +19,9 @@ class ListMajors extends ListRecords
     {
         return [
             CreateAction::make(),
+            ExportAction::make()
+                ->exporter(UserExporter::class)
+                ->label('تصدير الطلاب'),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
                 ->action(function () {
