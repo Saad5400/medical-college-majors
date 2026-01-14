@@ -18,13 +18,6 @@ class ExportDownloadController extends Controller
             'Only administrators can download exports.'
         );
 
-        // Validate the signature
-        abort_unless(
-            $request->hasValidSignature(),
-            401,
-            'Invalid or expired download link.'
-        );
-
         // Find the export
         $export = Export::findOrFail($exportId);
 
