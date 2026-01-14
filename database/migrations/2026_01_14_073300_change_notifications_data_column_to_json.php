@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,9 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('notifications', function (Blueprint $table) {
-            $table->json('data')->change();
-        });
+        // For PostgreSQL, we need to explicitly cast the text column to json
+        DB::statement('ALTER TABLE notifications ALTER COLUMN data TYPE json USING data::json');
     }
 
     /**
@@ -21,8 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('notifications', function (Blueprint $table) {
-            $table->text('data')->change();
-        });
+        DB::statement('ALTER TABLE notifications ALTER COLUMN data TYPE text');
     }
 };
