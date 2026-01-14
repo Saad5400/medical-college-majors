@@ -22,7 +22,8 @@ class ListMajors extends ListRecords
             CreateAction::make(),
             ExportAction::make()
                 ->exporter(UserExporter::class)
-                ->label('تصدير الطلاب'),
+                ->label('تصدير الطلاب')
+                ->modifyQueryUsing(fn () => User::query()),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
                 ->action(function () {
