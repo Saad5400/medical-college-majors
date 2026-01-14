@@ -35,6 +35,7 @@ class ListUsers extends ListRecords
             ImportAction::make()
                 ->label('استيراد الطلاب')
                 ->importer(UserImporter::class)
+                ->modalHeading('استيراد الطلاب')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('success'),
         ];
