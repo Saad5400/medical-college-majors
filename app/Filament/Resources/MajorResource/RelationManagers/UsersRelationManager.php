@@ -41,6 +41,8 @@ class UsersRelationManager extends RelationManager
             ])
             ->filters([
                 //
-            ]);
+            ])
+            ->defaultPaginationPageOption(25)
+            ->paginationPageOptions([25, 50, 100]);
     }
 }
