@@ -96,14 +96,19 @@ class RegistrationRequestResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.name')
                     ->label('الطالب')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('user.gpa')
                     ->label('المعدل')
                     ->sortable(),
                 TextColumn::make('المسارات')
                     ->getStateUsing(fn ($record) => $record->majorRegistrationRequests->pluck('major.name'))
                     ->label('رغبات التسكين')
-                    ->searchable(),
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('majorRegistrationRequests.major', function (Builder $query) use ($search) {
+                            $query->where('name', 'ilike', "%{$search}%");
+                        });
+                    }),
             ])
             ->defaultSort('user.gpa', 'desc')
             ->filters([
