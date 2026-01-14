@@ -23,7 +23,10 @@ class ListMajors extends ListRecords
             ExportAction::make()
                 ->exporter(UserExporter::class)
                 ->label('تصدير الطلاب')
-                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('major_id')),
+                ->modalHeading('تصدير الطلاب')
+                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('major_id'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('info'),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
                 ->action(function () {
@@ -69,7 +72,9 @@ class ListMajors extends ListRecords
                         ->title('تم توزيع الطلاب على المسارات')
                         ->success()
                         ->send();
-                }),
+                })
+                ->icon('heroicon-o-arrows-right-left')
+                ->color('primary'),
         ];
     }
 }
