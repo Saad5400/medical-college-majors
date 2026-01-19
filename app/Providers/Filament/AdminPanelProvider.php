@@ -81,7 +81,6 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->plugin(
                 EasyFooterPlugin::make()
-                    ->withLoadTime()
                     ->withLinks([
                         ['title' => 'Developed by Saad Batwa', 'url' => 'https://sb.sa'],
                     ])

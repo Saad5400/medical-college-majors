@@ -48,27 +48,33 @@ class MajorResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                // Calculate users_count with type casting for PostgreSQL
-                // users.major_id is varchar, majors.id is bigint - need to cast for comparison
-                $query->addSelect([
-                    'users_count' => DB::table('users')
-                        ->selectRaw('COUNT(*)')
-                        ->whereRaw('"users"."major_id" = "majors"."id"::text'),
-                ]);
-
-                // Calculate first_choice_users_count efficiently with a subquery
-                // Find records where sort equals the minimum sort for that registration_request
-                // Use raw SQL to ensure proper type casting for PostgreSQL
-                $firstChoiceSubquery = DB::table('major_registration_request')
-                    ->selectRaw('major_id::text as major_id, COUNT(*)::integer as count')
-                    ->whereRaw('sort = (SELECT MIN(mrr2.sort) FROM major_registration_request mrr2 WHERE mrr2.registration_request_id = major_registration_request.registration_request_id)')
+                // Count users per major - handle varchar major_id vs bigint id
+                $usersCountSubquery = DB::table('users')
+                    ->select('major_id', DB::raw('COUNT(*) as count'))
+                    ->whereNotNull('major_id')
                     ->groupBy('major_id');
 
+                $query->leftJoinSub($usersCountSubquery, 'users_counts', function ($join) {
+                    $join->whereRaw('"majors"."id"::text = "users_counts"."major_id"');
+                });
+
+                // Pre-compute first choice counts using a single aggregated subquery
+                // A "first choice" is where sort equals the minimum sort for that registration_request
+                $firstChoiceSubquery = DB::table('major_registration_request as mrr1')
+                    ->select('mrr1.major_id', DB::raw('COUNT(*) as count'))
+                    ->whereRaw('mrr1.sort = (
+                        SELECT MIN(mrr2.sort) 
+                        FROM major_registration_request mrr2 
+                        WHERE mrr2.registration_request_id = mrr1.registration_request_id
+                    )')
+                    ->groupBy('mrr1.major_id');
+
                 $query->leftJoinSub($firstChoiceSubquery, 'first_choices', function ($join) {
-                    $join->whereRaw('"majors"."id"::text = "first_choices"."major_id"');
+                    $join->on('majors.id', '=', 'first_choices.major_id');
                 })
                     ->addSelect('majors.*')
-                    ->addSelect('first_choices.count as first_choice_users_count');
+                    ->addSelect(DB::raw('COALESCE(users_counts.count, 0) as users_count'))
+                    ->addSelect(DB::raw('COALESCE(first_choices.count, 0) as first_choice_users_count'));
             })
             ->columns([
                 TextColumn::make('created_at')
