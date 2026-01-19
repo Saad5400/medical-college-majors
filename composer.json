@@ -12,6 +12,7 @@
         "filament/filament": "^4.0",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "predis/predis": "^3.3",
         "pxlrbt/filament-excel": "^3.3",
         "spatie/laravel-activitylog": "^4.10"
     },
