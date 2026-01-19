@@ -40,7 +40,13 @@ class ListMajors extends ListRecords
                                 $majorsQuery->orderByPivot('sort');
                             }]);
                         }])
+                        ->addSelect(['latest_request_created_at' => \App\Models\RegistrationRequest::select('created_at')
+                            ->whereColumn('user_id', 'users.id')
+                            ->latest()
+                            ->limit(1),
+                        ])
                         ->orderBy('gpa', 'desc')
+                        ->orderBy('latest_request_created_at', 'asc')
                         ->get();
 
                     // Pre-load majors with their max_users
