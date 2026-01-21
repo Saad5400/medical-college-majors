@@ -250,7 +250,9 @@ class RegistrationRequestResource extends Resource
                                 $query->where('is_leader_only', false);
                             }
 
-                            return $query->get()
+                            return $query->orderBy('sort')
+                                ->orderBy('id')
+                                ->get()
                                 ->mapWithKeys(fn ($track) => [$track->id => $track->name]);
                         })
                         ->searchable()

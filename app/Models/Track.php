@@ -23,12 +23,25 @@ class Track extends Model
         'max_users',
         'is_leader_only',
         'elective_months',
+        'sort',
     ];
 
     protected $casts = [
         'is_leader_only' => 'boolean',
         'elective_months' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $track): void {
+            if ($track->sort !== null) {
+                return;
+            }
+
+            $maxSort = (int) (static::query()->max('sort') ?? 0);
+            $track->sort = $maxSort + 1;
+        });
+    }
 
     public function registrationRequests(): BelongsToMany
     {

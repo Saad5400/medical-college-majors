@@ -142,7 +142,8 @@ class TrackResource extends Resource
                     ->label('عدد الطلاب')
                     ->sortable(),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('sort')
+            ->reorderable('sort')
             ->filters([
                 //
             ])

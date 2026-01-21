@@ -48,7 +48,8 @@ class TrackSchedule extends Page
     {
         $tracks = Track::query()
             ->with(['trackSpecializations.specialization'])
-            ->orderBy('name')
+            ->orderBy('sort')
+            ->orderBy('id')
             ->get();
 
         $this->tracks = $tracks->map(fn (Track $track): array => [
