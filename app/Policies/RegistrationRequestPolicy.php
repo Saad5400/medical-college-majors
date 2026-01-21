@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\RegistrationRequest;
 use App\Models\User;
+use App\Settings\RegistrationSettings;
 
 class RegistrationRequestPolicy
 {
@@ -20,7 +21,11 @@ class RegistrationRequestPolicy
      */
     public function view(User $user, RegistrationRequest $registrationrequest): bool
     {
-        return $registrationrequest->user_id === auth()->id();
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $registrationrequest->user_id === $user->id;
     }
 
     /**
@@ -28,7 +33,20 @@ class RegistrationRequestPolicy
      */
     public function create(User $user): bool
     {
-        return auth()->user()->registrationRequests()->doesntExist();
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('leader')) {
+            return false;
+        }
+
+        $settings = app(RegistrationSettings::class);
+        if (!$settings->track_registration_open) {
+            return false;
+        }
+
+        return $user->registrationRequests()->doesntExist();
     }
 
     /**
@@ -36,7 +54,20 @@ class RegistrationRequestPolicy
      */
     public function update(User $user, RegistrationRequest $record): bool
     {
-        return $record->user_id === auth()->id();
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('leader')) {
+            return false;
+        }
+
+        $settings = app(RegistrationSettings::class);
+        if (!$settings->track_registration_open) {
+            return false;
+        }
+
+        return $record->user_id === $user->id;
     }
 
     /**
@@ -44,7 +75,16 @@ class RegistrationRequestPolicy
      */
     public function delete(User $user, RegistrationRequest $registrationrequest): bool
     {
-        return $registrationrequest->user_id === auth()->id();
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        $settings = app(RegistrationSettings::class);
+        if (!$settings->track_registration_open) {
+            return false;
+        }
+
+        return $registrationrequest->user_id === $user->id;
     }
 
     /**

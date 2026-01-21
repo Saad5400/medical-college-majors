@@ -7,6 +7,7 @@ use App\Filament\Resources\TrackResource;
 use App\Models\RegistrationRequest;
 use App\Models\Track;
 use App\Models\User;
+use App\Settings\RegistrationSettings;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\ExportAction;
@@ -30,6 +31,7 @@ class ListTracks extends ListRecords
                 ->color('info'),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
+                ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->track_registration_open)
                 ->action(function () {
                     // Reset all users' track_id
                     User::query()->update(['track_id' => null]);

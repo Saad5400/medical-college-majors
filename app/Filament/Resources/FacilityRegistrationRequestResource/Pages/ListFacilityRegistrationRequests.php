@@ -6,6 +6,7 @@ use App\Filament\Resources\FacilityRegistrationRequestResource;
 use App\Models\FacilityRegistrationRequest;
 use App\Models\FacilitySeat;
 use App\Models\User;
+use App\Settings\RegistrationSettings;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
@@ -22,7 +23,7 @@ class ListFacilityRegistrationRequests extends ListRecords
             CreateAction::make(),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المنشآت')
-                ->visible(fn () => auth()->user()->hasRole('admin'))
+                ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->facility_registration_open)
                 ->form([
                     Select::make('month_index')
                         ->searchable()

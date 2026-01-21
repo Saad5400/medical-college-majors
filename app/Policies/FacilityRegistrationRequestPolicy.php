@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
-use Illuminate\Auth\Access\Response;
 use App\Models\FacilityRegistrationRequest;
 use App\Models\User;
+use App\Settings\RegistrationSettings;
 
 class FacilityRegistrationRequestPolicy
 {
@@ -13,7 +13,7 @@ class FacilityRegistrationRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->checkPermissionTo('view-any FacilityRegistrationRequest');
+        return true;
     }
 
     /**
@@ -21,7 +21,11 @@ class FacilityRegistrationRequestPolicy
      */
     public function view(User $user, FacilityRegistrationRequest $facilityregistrationrequest): bool
     {
-        return $user->checkPermissionTo('view FacilityRegistrationRequest');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $facilityregistrationrequest->user_id === $user->id;
     }
 
     /**
@@ -29,7 +33,15 @@ class FacilityRegistrationRequestPolicy
      */
     public function create(User $user): bool
     {
-        return $user->checkPermissionTo('create FacilityRegistrationRequest');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if (!$this->isFacilityRegistrationOpen()) {
+            return false;
+        }
+
+        return $user->track_id !== null;
     }
 
     /**
@@ -37,7 +49,15 @@ class FacilityRegistrationRequestPolicy
      */
     public function update(User $user, FacilityRegistrationRequest $facilityregistrationrequest): bool
     {
-        return $user->checkPermissionTo('update FacilityRegistrationRequest');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if (!$this->isFacilityRegistrationOpen()) {
+            return false;
+        }
+
+        return $facilityregistrationrequest->user_id === $user->id;
     }
 
     /**
@@ -45,7 +65,15 @@ class FacilityRegistrationRequestPolicy
      */
     public function delete(User $user, FacilityRegistrationRequest $facilityregistrationrequest): bool
     {
-        return $user->checkPermissionTo('delete FacilityRegistrationRequest');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if (!$this->isFacilityRegistrationOpen()) {
+            return false;
+        }
+
+        return $facilityregistrationrequest->user_id === $user->id;
     }
 
     /**
@@ -102,5 +130,10 @@ class FacilityRegistrationRequestPolicy
     public function forceDeleteAny(User $user): bool
     {
         return $user->checkPermissionTo('force-delete-any FacilityRegistrationRequest');
+    }
+
+    private function isFacilityRegistrationOpen(): bool
+    {
+        return app(RegistrationSettings::class)->facility_registration_open;
     }
 }

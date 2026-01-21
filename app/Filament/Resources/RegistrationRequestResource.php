@@ -70,6 +70,12 @@ class RegistrationRequestResource extends Resource
             return false;
         }
 
+        // Check if track registration is open
+        $settings = app(RegistrationSettings::class);
+        if (! $settings->track_registration_open) {
+            return false;
+        }
+
         // Regular students can only edit their own requests
         return $record->user_id === $user->id;
     }
