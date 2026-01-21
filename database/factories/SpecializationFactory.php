@@ -26,6 +26,7 @@ class SpecializationFactory extends Factory
             'name' => fake()->unique()->jobTitle(),
             'duration_months' => fake()->numberBetween(1, 2),
             'facility_type' => $facilityType->value,
+            'color' => fake()->hexColor(),
         ];
     }
 }

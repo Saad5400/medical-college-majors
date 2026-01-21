@@ -10,10 +10,12 @@ use App\Models\Specialization;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -37,6 +39,11 @@ class SpecializationResource extends Resource
                     ->label('اسم التخصص')
                     ->required()
                     ->maxLength(255),
+                ColorPicker::make('color')
+                    ->label('لون التخصص')
+                    ->required()
+                    ->default('#94a3b8')
+                    ->regex('/^#([a-fA-F0-9]{6})$/'),
                 TextInput::make('duration_months')
                     ->label('مدة التخصص (بالأشهر)')
                     ->required()
@@ -74,6 +81,8 @@ class SpecializationResource extends Resource
                 TextColumn::make('name')
                     ->label('اسم التخصص')
                     ->searchable(),
+                ColorColumn::make('color')
+                    ->label('اللون'),
                 TextColumn::make('duration_months')
                     ->label('المدة (أشهر)')
                     ->sortable(),

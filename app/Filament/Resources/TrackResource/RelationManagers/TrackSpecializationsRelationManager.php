@@ -74,6 +74,47 @@ class TrackSpecializationsRelationManager extends RelationManager
                     $get('specialization_id'),
                     $record?->id,
                 ))
+                ->rule(function (Get $get): \Closure {
+                    return function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                        if (! $value) {
+                            return;
+                        }
+
+                        $track = $this->getOwnerRecord();
+
+                        if (! $track) {
+                            return;
+                        }
+
+                        $specializationId = $get('specialization_id');
+
+                        if (! $specializationId) {
+                            return;
+                        }
+
+                        $durationMonths = $this->normalizeDuration(
+                            Specialization::query()->whereKey($specializationId)->value('duration_months'),
+                        );
+                        $startMonth = (int) $value;
+                        $endMonth = min(12, $startMonth + $durationMonths - 1);
+                        $range = range($startMonth, $endMonth);
+                        $conflicts = array_intersect($range, $track->getElectiveMonths());
+
+                        if ($conflicts === []) {
+                            return;
+                        }
+
+                        $conflicts = array_values(array_unique($conflicts));
+                        sort($conflicts);
+
+                        $labels = implode('، ', array_map(
+                            fn (int $month): string => "الشهر {$month}",
+                            $conflicts,
+                        ));
+
+                        $fail("لا يمكن اختيار تخصص يغطي أشهر اختيارية: {$labels}.");
+                    };
+                })
                 ->required(),
             Select::make('specialization_id')
                 ->label('التخصص')
@@ -93,27 +134,16 @@ class TrackSpecializationsRelationManager extends RelationManager
      */
     private function getBlockedMonths(?int $ignoreRecordId = null): array
     {
-        $query = $this->getOwnerRecord()
-            ->trackSpecializations()
-            ->with('specialization');
+        $track = $this->getOwnerRecord();
+        $blockedMonths = array_merge(
+            $track->getSpecializationMonths($ignoreRecordId),
+            $track->getElectiveMonths(),
+        );
 
-        if ($ignoreRecordId) {
-            $query->whereKeyNot($ignoreRecordId);
-        }
+        $blockedMonths = array_values(array_unique($blockedMonths));
+        sort($blockedMonths);
 
-        $blockedMonths = [];
-
-        foreach ($query->get() as $trackSpecialization) {
-            $durationMonths = $this->normalizeDuration($trackSpecialization->specialization?->duration_months);
-            $startMonth = (int) $trackSpecialization->month_index;
-            $endMonth = min(12, $startMonth + $durationMonths - 1);
-
-            for ($month = $startMonth; $month <= $endMonth; $month++) {
-                $blockedMonths[$month] = true;
-            }
-        }
-
-        return array_keys($blockedMonths);
+        return $blockedMonths;
     }
 
     private function normalizeDuration(?int $durationMonths): int

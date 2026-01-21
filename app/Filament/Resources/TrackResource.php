@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TrackResource\Pages\CreateTrack;
 use App\Filament\Resources\TrackResource\Pages\EditTrack;
 use App\Filament\Resources\TrackResource\Pages\ListTracks;
+use App\Filament\Resources\TrackResource\Pages\TrackSchedule;
 use App\Filament\Resources\TrackResource\RelationManagers\TrackSpecializationsRelationManager;
 use App\Filament\Resources\TrackResource\RelationManagers\UsersRelationManager;
 use App\Models\Track;
@@ -68,6 +69,26 @@ class TrackResource extends Resource
                         11 => 'الشهر 11',
                         12 => 'الشهر 12',
                     ])
+                    ->rule(function (?Track $record): \Closure {
+                        return function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
+                            if (! $record || ! is_array($value)) {
+                                return;
+                            }
+
+                            $conflicts = $record->getConflictingElectiveMonths($value);
+
+                            if ($conflicts === []) {
+                                return;
+                            }
+
+                            $labels = implode('، ', array_map(
+                                fn (int $month): string => "الشهر {$month}",
+                                $conflicts,
+                            ));
+
+                            $fail("لا يمكن اختيار أشهر اختيارية تتداخل مع تخصصات موجودة: {$labels}.");
+                        };
+                    })
                     ->columns(4),
             ]);
     }
@@ -162,6 +183,7 @@ class TrackResource extends Resource
         return [
             'index' => ListTracks::route('/'),
             'create' => CreateTrack::route('/create'),
+            'schedule' => TrackSchedule::route('/schedule'),
             'edit' => EditTrack::route('/{record}/edit'),
         ];
     }

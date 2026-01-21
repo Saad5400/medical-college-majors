@@ -12,7 +12,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Specialization extends Model
 {
-    use LogsActivity, HasFactory;
+    use HasFactory, LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -23,6 +23,7 @@ class Specialization extends Model
         'name',
         'duration_months',
         'facility_type',
+        'color',
     ];
 
     protected function casts(): array

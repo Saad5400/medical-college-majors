@@ -22,6 +22,11 @@ class ListTracks extends ListRecords
     {
         return [
             CreateAction::make(),
+            Action::make('schedule')
+                ->label('عرض جدول المسارات')
+                ->icon('heroicon-o-table-cells')
+                ->url(fn (): string => TrackResource::getUrl('schedule'))
+                ->color('info'),
             ExportAction::make()
                 ->exporter(UserExporter::class)
                 ->label('تصدير الطلاب')
