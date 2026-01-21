@@ -7,8 +7,10 @@ use App\Filament\Resources\FacilityRegistrationRequestResource\Pages\EditFacilit
 use App\Filament\Resources\FacilityRegistrationRequestResource\Pages\ListFacilityRegistrationRequests;
 use App\Models\Facility;
 use App\Models\FacilityRegistrationRequest;
+use App\Models\FacilitySeat;
 use App\Models\Specialization;
 use App\Models\TrackSpecialization;
+use App\Models\User;
 use App\Settings\RegistrationSettings;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -26,6 +28,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class FacilityRegistrationRequestResource extends Resource
 {
@@ -37,6 +40,8 @@ class FacilityRegistrationRequestResource extends Resource
 
     protected static ?string $pluralModelLabel = 'طلبات تسجيل المنشآت';
 
+    private const WISH_COUNT = 5;
+
     public static function canCreate(): bool
     {
         $user = auth()->user();
@@ -44,6 +49,10 @@ class FacilityRegistrationRequestResource extends Resource
         // Admins can always create
         if ($user->hasRole('admin')) {
             return true;
+        }
+
+        if (! $user->hasRole('student')) {
+            return false;
         }
 
         // Check if facility registration is open
@@ -94,19 +103,24 @@ class FacilityRegistrationRequestResource extends Resource
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (callable $set): void {
+                        $set('month_index', null);
+                        $set('wishes', static::getBlankWishesState());
+                    })
                     ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->required(),
                 Select::make('month_index')
                     ->searchable()
                     ->preload()
                     ->label('الشهر')
-                    ->options(function () {
-                        $options = [];
-                        for ($i = 1; $i <= 12; $i++) {
-                            $options[$i] = "الشهر {$i}";
-                        }
-
-                        return $options;
+                    ->options(fn (Get $get, ?FacilityRegistrationRequest $record): array => static::getAvailableMonthOptions(
+                        $get,
+                        $record,
+                    ))
+                    ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
+                    ->afterStateUpdated(function (callable $set): void {
+                        $set('wishes', static::getBlankWishesState());
                     })
                     ->required()
                     ->live(),
@@ -184,9 +198,13 @@ class FacilityRegistrationRequestResource extends Resource
                 ->live()
                 ->deletable(false)
                 ->addable(false)
-                ->minItems(5)
-                ->maxItems(5)
-                ->defaultItems(5)
+                ->minItems(self::WISH_COUNT)
+                ->maxItems(self::WISH_COUNT)
+                ->defaultItems(self::WISH_COUNT)
+                ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::shouldShowWishes(
+                    $get,
+                    $record,
+                ))
                 ->schema([
                     Hidden::make('priority')
                         ->default(function (Get $get, $component) {
@@ -213,30 +231,17 @@ class FacilityRegistrationRequestResource extends Resource
 
                             return "الرغبة {$priority}";
                         })
-                        ->options(function (Get $get) {
-                            $monthIndex = $get('../../month_index');
-                            $user = auth()->user();
-
-                            if (! $monthIndex || ! $user->track_id) {
-                                return [];
+                        ->live()
+                        ->afterStateUpdated(function (callable $set, Get $get): void {
+                            if (static::isElectiveMonth($get)) {
+                                $set('specialization_id', null);
                             }
-
-                            // Get the specialization for this month from the user's track
-                            $trackSpec = TrackSpecialization::where('track_id', $user->track_id)
-                                ->where('month_index', $monthIndex)
-                                ->first();
-
-                            if (! $trackSpec) {
-                                return Facility::query()->pluck('name', 'id');
-                            }
-
-                            // Get facilities that match the specialization type
-                            $spec = $trackSpec->specialization;
-
-                            return Facility::query()
-                                ->where('type', $spec->facility_type)
-                                ->pluck('name', 'id');
                         })
+                        ->options(fn (Get $get, Select $component, ?FacilityRegistrationRequest $record): array => static::getAvailableFacilityOptions(
+                            $get,
+                            $component,
+                            $record,
+                        ))
                         ->searchable()
                         ->preload()
                         ->visible(fn (Get $get) => ! $get('is_custom'))
@@ -247,22 +252,25 @@ class FacilityRegistrationRequestResource extends Resource
                         ->required(fn (Get $get) => $get('is_custom')),
                     Select::make('specialization_id')
                         ->label('التخصص (للأشهر الاختيارية)')
-                        ->options(Specialization::query()->pluck('name', 'id'))
+                        ->live()
+                        ->options(fn (Get $get, ?FacilityRegistrationRequest $record): array => static::getElectiveSpecializationOptions(
+                            $get,
+                            $record,
+                        ))
                         ->searchable()
                         ->preload()
-                        ->visible(function (Get $get) {
-                            // Only show for elective months
-                            $monthIndex = $get('../../month_index');
-                            $user = auth()->user();
-
-                            if (! $monthIndex || ! $user->track) {
-                                return false;
-                            }
-
-                            $electiveMonths = $user->track->elective_months ?? [];
-
-                            return in_array($monthIndex, $electiveMonths);
-                        }),
+                        ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
+                            $get,
+                            $record,
+                        ))
+                        ->disabled(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
+                            $get,
+                            $record,
+                        ) && ! $get('facility_id') && ! $get('is_custom'))
+                        ->required(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
+                            $get,
+                            $record,
+                        ) && ! $get('is_custom')),
                     TextInput::make('custom_specialization_name')
                         ->label('اسم التخصص المخصص')
                         ->visible(fn (Get $get) => $get('is_custom')),
@@ -270,5 +278,354 @@ class FacilityRegistrationRequestResource extends Resource
                         ->default(true),
                 ]),
         ];
+    }
+
+    private static function shouldShowWishes(Get $get, ?FacilityRegistrationRequest $record = null): bool
+    {
+        $user = static::resolveFormUser($get, $record);
+
+        if (! $user) {
+            return false;
+        }
+
+        $monthIndex = static::resolveMonthIndex($get, $record);
+
+        return $monthIndex !== null;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function getBlankWishesState(): array
+    {
+        return array_fill(0, self::WISH_COUNT, []);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function getAvailableMonthOptions(Get $get, ?FacilityRegistrationRequest $record = null): array
+    {
+        $user = static::resolveFormUser($get, $record);
+
+        if (! $user || ! $user->track) {
+            return [];
+        }
+
+        $track = $user->track;
+        $trackSpecializations = $track->trackSpecializations;
+        $scheduleMonths = static::getScheduleMonths($trackSpecializations, $track->elective_months ?? []);
+        $blockedMonths = static::getBlockedMonthsForUser($user, $trackSpecializations, $record?->id);
+
+        $options = [];
+
+        foreach ($scheduleMonths as $monthIndex) {
+            if (in_array($monthIndex, $blockedMonths, true)) {
+                continue;
+            }
+
+            $options[$monthIndex] = "الشهر {$monthIndex}";
+        }
+
+        if ($record?->month_index && ! array_key_exists($record->month_index, $options)) {
+            $options[$record->month_index] = "الشهر {$record->month_index}";
+        }
+
+        ksort($options);
+
+        return $options;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function getAvailableFacilityOptions(
+        Get $get,
+        Select $component,
+        ?FacilityRegistrationRequest $record = null,
+    ): array {
+        $monthIndex = static::resolveWishMonthIndex($get, $record);
+        $isElective = static::isElectiveMonth($get, $record);
+
+        if (! $monthIndex) {
+            return [];
+        }
+
+        $specializationId = $isElective
+            ? $get('specialization_id')
+            : static::resolveSpecializationIdForWish($get, $record);
+
+        if (! $isElective && ! $specializationId) {
+            return [];
+        }
+
+        $currentItemKey = static::resolveRepeaterItemKey($component);
+        $selectedFacilityIds = static::getSelectedFacilityIds($get, $currentItemKey);
+
+        $seatQuery = FacilitySeat::query()
+            ->select('facility_id')
+            ->where('month_index', $monthIndex);
+
+        if ($specializationId) {
+            $seatQuery->where('specialization_id', $specializationId);
+        }
+
+        $query = Facility::query()
+            ->whereIn('id', $seatQuery->distinct());
+
+        if ($selectedFacilityIds !== []) {
+            $query->whereNotIn('id', $selectedFacilityIds);
+        }
+
+        return $query->orderBy('name')->pluck('name', 'id')->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function getElectiveSpecializationOptions(Get $get, ?FacilityRegistrationRequest $record = null): array
+    {
+        $monthIndex = static::resolveWishMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return [];
+        }
+
+        $seatQuery = FacilitySeat::query()
+            ->where('month_index', $monthIndex);
+
+        if ($facilityId = $get('facility_id')) {
+            $seatQuery->where('facility_id', $facilityId);
+        }
+
+        $specializationIds = $seatQuery->select('specialization_id')->distinct();
+
+        return Specialization::query()
+            ->whereIn('id', $specializationIds)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    private static function isElectiveMonth(Get $get, ?FacilityRegistrationRequest $record = null): bool
+    {
+        $monthIndex = static::resolveWishMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return false;
+        }
+
+        $track = static::resolveFormUser($get, $record)?->track;
+        $electiveMonths = $track?->elective_months ?? [];
+
+        return in_array($monthIndex, $electiveMonths, true);
+    }
+
+    private static function resolveFormUser(Get $get, ?FacilityRegistrationRequest $record = null): ?User
+    {
+        if (! auth()->user()->hasRole('admin')) {
+            $user = auth()->user();
+
+            if (! $user) {
+                return null;
+            }
+
+            $user->loadMissing('track.trackSpecializations.specialization');
+
+            return $user;
+        }
+
+        $userId = $get('user_id') ?? $record?->user_id;
+
+        if (! $userId) {
+            return null;
+        }
+
+        return User::query()
+            ->with('track.trackSpecializations.specialization')
+            ->find($userId);
+    }
+
+    private static function resolveMonthIndex(Get $get, ?FacilityRegistrationRequest $record = null): ?int
+    {
+        $monthIndex = $get('month_index') ?? $record?->month_index;
+
+        if (! $monthIndex) {
+            return null;
+        }
+
+        return (int) $monthIndex;
+    }
+
+    private static function resolveWishMonthIndex(Get $get, ?FacilityRegistrationRequest $record = null): ?int
+    {
+        $monthIndex = $get('../../month_index') ?? $record?->month_index;
+
+        if (! $monthIndex) {
+            return null;
+        }
+
+        return (int) $monthIndex;
+    }
+
+    private static function resolveSpecializationIdForWish(Get $get, ?FacilityRegistrationRequest $record = null): ?int
+    {
+        $monthIndex = static::resolveWishMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return null;
+        }
+
+        $user = static::resolveFormUser($get, $record);
+
+        if (! $user || ! $user->track) {
+            return null;
+        }
+
+        if (static::isElectiveMonth($get, $record)) {
+            return $get('specialization_id');
+        }
+
+        $trackSpecialization = static::findTrackSpecializationForMonth(
+            $user->track->trackSpecializations,
+            $monthIndex,
+        );
+
+        return $trackSpecialization?->specialization_id;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\TrackSpecialization>  $trackSpecializations
+     * @return array<int, int>
+     */
+    private static function getScheduleMonths(Collection $trackSpecializations, array $electiveMonths): array
+    {
+        $months = [];
+
+        foreach ($trackSpecializations as $trackSpecialization) {
+            $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
+            $startMonth = (int) $trackSpecialization->month_index;
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            for ($month = $startMonth; $month <= $endMonth; $month++) {
+                $months[$month] = true;
+            }
+        }
+
+        foreach ($electiveMonths as $month) {
+            $month = (int) $month;
+
+            if ($month < 1 || $month > 12) {
+                continue;
+            }
+
+            $months[$month] = true;
+        }
+
+        $scheduleMonths = array_keys($months);
+        sort($scheduleMonths);
+
+        return $scheduleMonths;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\TrackSpecialization>  $trackSpecializations
+     * @return array<int, int>
+     */
+    private static function getBlockedMonthsForUser(
+        User $user,
+        Collection $trackSpecializations,
+        ?int $ignoreRequestId = null,
+    ): array {
+        $query = FacilityRegistrationRequest::query()->where('user_id', $user->id);
+
+        if ($ignoreRequestId) {
+            $query->whereKeyNot($ignoreRequestId);
+        }
+
+        $requests = $query->with('wishes.specialization')->get(['id', 'month_index', 'user_id']);
+        $blockedMonths = [];
+
+        foreach ($requests as $request) {
+            $monthIndex = (int) $request->month_index;
+            $trackSpecialization = static::findTrackSpecializationForMonth($trackSpecializations, $monthIndex);
+
+            if ($trackSpecialization) {
+                $startMonth = (int) $trackSpecialization->month_index;
+                $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
+            } else {
+                $startMonth = $monthIndex;
+                $durationMonths = static::normalizeDuration(
+                    $request->wishes
+                        ->pluck('specialization')
+                        ->filter()
+                        ->first()?->duration_months,
+                );
+            }
+
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            for ($month = $startMonth; $month <= $endMonth; $month++) {
+                $blockedMonths[$month] = true;
+            }
+        }
+
+        return array_keys($blockedMonths);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\TrackSpecialization>  $trackSpecializations
+     */
+    private static function findTrackSpecializationForMonth(
+        Collection $trackSpecializations,
+        int $monthIndex,
+    ): ?TrackSpecialization {
+        foreach ($trackSpecializations as $trackSpecialization) {
+            $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
+            $startMonth = (int) $trackSpecialization->month_index;
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            if ($monthIndex >= $startMonth && $monthIndex <= $endMonth) {
+                return $trackSpecialization;
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalizeDuration(?int $durationMonths): int
+    {
+        return max(1, (int) $durationMonths);
+    }
+
+    private static function resolveRepeaterItemKey(Select $component): ?string
+    {
+        $segments = explode('.', $component->getStatePath());
+
+        return $segments[2] ?? null;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private static function getSelectedFacilityIds(Get $get, ?string $currentItemKey): array
+    {
+        $wishes = $get('data.wishes', true);
+
+        if (! is_array($wishes)) {
+            return [];
+        }
+
+        if ($currentItemKey && array_key_exists($currentItemKey, $wishes)) {
+            unset($wishes[$currentItemKey]);
+        }
+
+        $wishes = array_values($wishes);
+        $wishes = array_filter($wishes, fn (array $wish): bool => ! empty($wish['facility_id']));
+
+        return array_values(array_unique(array_map(
+            fn (array $wish): int => (int) $wish['facility_id'],
+            $wishes,
+        )));
     }
 }

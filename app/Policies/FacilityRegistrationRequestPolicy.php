@@ -13,7 +13,7 @@ class FacilityRegistrationRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasRole('admin') || $user->hasRole('student');
     }
 
     /**
@@ -23,6 +23,10 @@ class FacilityRegistrationRequestPolicy
     {
         if ($user->hasRole('admin')) {
             return true;
+        }
+
+        if (! $user->hasRole('student')) {
+            return false;
         }
 
         return $facilityregistrationrequest->user_id === $user->id;
@@ -37,7 +41,11 @@ class FacilityRegistrationRequestPolicy
             return true;
         }
 
-        if (!$this->isFacilityRegistrationOpen()) {
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
+        if (! $this->isFacilityRegistrationOpen()) {
             return false;
         }
 
@@ -53,7 +61,11 @@ class FacilityRegistrationRequestPolicy
             return true;
         }
 
-        if (!$this->isFacilityRegistrationOpen()) {
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
+        if (! $this->isFacilityRegistrationOpen()) {
             return false;
         }
 
@@ -69,7 +81,11 @@ class FacilityRegistrationRequestPolicy
             return true;
         }
 
-        if (!$this->isFacilityRegistrationOpen()) {
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
+        if (! $this->isFacilityRegistrationOpen()) {
             return false;
         }
 

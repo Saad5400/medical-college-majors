@@ -95,8 +95,12 @@ class FacilitySeatsRelationManager extends RelationManager
     /**
      * @return array<int, int>
      */
-    private function getBlockedMonths(?int $ignoreRecordId = null): array
+    private function getBlockedMonths(?int $specializationId, ?int $ignoreRecordId = null): array
     {
+        if (! $specializationId) {
+            return [];
+        }
+
         $query = $this->getOwnerRecord()
             ->facilitySeats()
             ->with('specialization');
@@ -104,6 +108,8 @@ class FacilitySeatsRelationManager extends RelationManager
         if ($ignoreRecordId) {
             $query->whereKeyNot($ignoreRecordId);
         }
+
+        $query->where('specialization_id', $specializationId);
 
         $blockedMonths = [];
 
@@ -147,7 +153,7 @@ class FacilitySeatsRelationManager extends RelationManager
      */
     private function getAvailableMonthOptions(?int $specializationId, ?int $ignoreRecordId = null): array
     {
-        $blockedMonths = $this->getBlockedMonths($ignoreRecordId);
+        $blockedMonths = $this->getBlockedMonths($specializationId, $ignoreRecordId);
         $durationMonths = $specializationId
             ? $this->normalizeDuration(
                 Specialization::query()->whereKey($specializationId)->value('duration_months'),
@@ -179,14 +185,16 @@ class FacilitySeatsRelationManager extends RelationManager
             return $query->pluck('name', 'id')->all();
         }
 
-        $blockedMonths = $this->getBlockedMonths($ignoreRecordId);
-
         return $query->get()
-            ->filter(fn (Specialization $specialization): bool => $this->isRangeAvailable(
-                $monthIndex,
-                $specialization->duration_months,
-                $blockedMonths,
-            ))
+            ->filter(function (Specialization $specialization) use ($monthIndex, $ignoreRecordId): bool {
+                $blockedMonths = $this->getBlockedMonths($specialization->id, $ignoreRecordId);
+
+                return $this->isRangeAvailable(
+                    $monthIndex,
+                    $specialization->duration_months,
+                    $blockedMonths,
+                );
+            })
             ->mapWithKeys(fn (Specialization $specialization): array => [$specialization->id => $specialization->name])
             ->all();
     }

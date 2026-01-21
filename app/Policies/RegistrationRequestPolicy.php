@@ -13,7 +13,7 @@ class RegistrationRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasRole('admin') || $user->hasRole('student');
     }
 
     /**
@@ -23,6 +23,10 @@ class RegistrationRequestPolicy
     {
         if ($user->hasRole('admin')) {
             return true;
+        }
+
+        if (! $user->hasRole('student')) {
+            return false;
         }
 
         return $registrationrequest->user_id === $user->id;
@@ -37,12 +41,16 @@ class RegistrationRequestPolicy
             return true;
         }
 
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
         if ($user->hasRole('leader')) {
             return false;
         }
 
         $settings = app(RegistrationSettings::class);
-        if (!$settings->track_registration_open) {
+        if (! $settings->track_registration_open) {
             return false;
         }
 
@@ -58,12 +66,16 @@ class RegistrationRequestPolicy
             return true;
         }
 
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
         if ($user->hasRole('leader')) {
             return false;
         }
 
         $settings = app(RegistrationSettings::class);
-        if (!$settings->track_registration_open) {
+        if (! $settings->track_registration_open) {
             return false;
         }
 
@@ -79,8 +91,12 @@ class RegistrationRequestPolicy
             return true;
         }
 
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
         $settings = app(RegistrationSettings::class);
-        if (!$settings->track_registration_open) {
+        if (! $settings->track_registration_open) {
             return false;
         }
 

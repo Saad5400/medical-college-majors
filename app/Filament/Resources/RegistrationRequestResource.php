@@ -42,6 +42,10 @@ class RegistrationRequestResource extends Resource
             return true;
         }
 
+        if (! $user->hasRole('student')) {
+            return false;
+        }
+
         // Leaders cannot create registration requests (their track is manually assigned)
         if ($user->hasRole('leader')) {
             return false;
@@ -63,6 +67,10 @@ class RegistrationRequestResource extends Resource
         // Admins can always edit
         if ($user->hasRole('admin')) {
             return true;
+        }
+
+        if (! $user->hasRole('student')) {
+            return false;
         }
 
         // Leaders cannot edit registration requests
