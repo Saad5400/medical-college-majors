@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UserResource extends Resource
 {
@@ -129,6 +130,7 @@ class UserResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                Impersonate::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -57,6 +57,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsTo(Track::class);
     }
 
+    public function canImpersonate(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return true;

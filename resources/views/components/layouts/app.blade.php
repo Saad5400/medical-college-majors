@@ -68,6 +68,8 @@
     {{ $slot }}
 </main>
 
+<x-impersonate::banner />
+
 @filamentScripts
 @vite('resources/js/app.js')
 </body>
