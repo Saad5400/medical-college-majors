@@ -27,13 +27,15 @@ class RegistrationRequest extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function majors(): BelongsToMany
+    public function tracks(): BelongsToMany
     {
-        return $this->belongsToMany(Major::class);
+        return $this->belongsToMany(Track::class, 'track_registration_requests')
+            ->withPivot('sort')
+            ->withTimestamps();
     }
 
-    public function majorRegistrationRequests(): HasMany
+    public function trackRegistrationRequests(): HasMany
     {
-        return $this->hasMany(MajorRegistrationRequest::class)->orderBy('sort');
+        return $this->hasMany(TrackRegistrationRequest::class)->orderBy('sort');
     }
 }

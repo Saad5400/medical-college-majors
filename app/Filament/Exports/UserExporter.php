@@ -17,7 +17,7 @@ class UserExporter extends Exporter
     public static function getColumns(): array
     {
         return [
-            ExportColumn::make('major.name')
+            ExportColumn::make('track.name')
                 ->label('المسار'),
             ExportColumn::make('name')
                 ->label('الاسم'),
@@ -34,7 +34,7 @@ class UserExporter extends Exporter
 
     public static function modifyQuery(Builder $query): Builder
     {
-        return $query->with('major')->orderBy('major_id');
+        return $query->with('track')->orderBy('track_id');
     }
 
     public function getFormats(): array

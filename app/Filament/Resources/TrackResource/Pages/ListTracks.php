@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\MajorResource\Pages;
+namespace App\Filament\Resources\TrackResource\Pages;
 
 use App\Filament\Exports\UserExporter;
-use App\Filament\Resources\MajorResource;
-use App\Models\Major;
+use App\Filament\Resources\TrackResource;
+use App\Models\RegistrationRequest;
+use App\Models\Track;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -12,9 +13,9 @@ use Filament\Actions\ExportAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
-class ListMajors extends ListRecords
+class ListTracks extends ListRecords
 {
-    protected static string $resource = MajorResource::class;
+    protected static string $resource = TrackResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -24,23 +25,23 @@ class ListMajors extends ListRecords
                 ->exporter(UserExporter::class)
                 ->label('تصدير الطلاب')
                 ->modalHeading('تصدير الطلاب')
-                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('major_id'))
+                ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('track_id'))
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('info'),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
                 ->action(function () {
-                    // Reset all users' major_id
-                    User::query()->update(['major_id' => null]);
+                    // Reset all users' track_id
+                    User::query()->update(['track_id' => null]);
 
-                    // Eager load registration requests with majors to avoid N+1
+                    // Eager load registration requests with tracks to avoid N+1
                     $users = User::query()
                         ->with(['registrationRequests' => function ($query) {
-                            $query->latest()->with(['majors' => function ($majorsQuery) {
-                                $majorsQuery->orderByPivot('sort');
+                            $query->latest()->with(['tracks' => function ($tracksQuery) {
+                                $tracksQuery->orderByPivot('sort');
                             }]);
                         }])
-                        ->addSelect(['latest_request_created_at' => \App\Models\RegistrationRequest::select('created_at')
+                        ->addSelect(['latest_request_created_at' => RegistrationRequest::select('created_at')
                             ->whereColumn('user_id', 'users.id')
                             ->latest()
                             ->limit(1),
@@ -49,9 +50,9 @@ class ListMajors extends ListRecords
                         ->orderBy('latest_request_created_at', 'asc')
                         ->get();
 
-                    // Pre-load majors with their max_users
-                    $majorCapacities = Major::query()->pluck('max_users', 'id')->toArray();
-                    $majorCurrentCounts = [];
+                    // Pre-load tracks with their max_users
+                    $trackCapacities = Track::query()->pluck('max_users', 'id')->toArray();
+                    $trackCurrentCounts = [];
 
                     /** @var User $user */
                     foreach ($users as $user) {
@@ -60,14 +61,14 @@ class ListMajors extends ListRecords
                             continue;
                         }
 
-                        $majors = $registrationRequest->majors;
+                        $tracks = $registrationRequest->tracks;
 
-                        foreach ($majors as $major) {
-                            $currentCount = $majorCurrentCounts[$major->id] ?? 0;
-                            if ($currentCount < $majorCapacities[$major->id]) {
-                                $user->major_id = $major->id;
+                        foreach ($tracks as $track) {
+                            $currentCount = $trackCurrentCounts[$track->id] ?? 0;
+                            if ($currentCount < $trackCapacities[$track->id]) {
+                                $user->track_id = $track->id;
                                 $user->save();
-                                $majorCurrentCounts[$major->id] = $currentCount + 1;
+                                $trackCurrentCounts[$track->id] = $currentCount + 1;
 
                                 break;
                             }

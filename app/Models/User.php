@@ -29,7 +29,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'phone_number',
         'password',
-        'major_id',
+        'track_id',
     ];
 
     protected $hidden = [
@@ -47,9 +47,14 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(RegistrationRequest::class);
     }
 
-    public function major(): BelongsTo
+    public function facilityRegistrationRequests(): HasMany
     {
-        return $this->belongsTo(Major::class);
+        return $this->hasMany(FacilityRegistrationRequest::class);
+    }
+
+    public function track(): BelongsTo
+    {
+        return $this->belongsTo(Track::class);
     }
 
     public function canAccessPanel(Panel $panel): bool

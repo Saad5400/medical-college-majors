@@ -5,8 +5,9 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\RegistrationRequestResource\Pages\CreateRegistrationRequest;
 use App\Filament\Resources\RegistrationRequestResource\Pages\EditRegistrationRequest;
 use App\Filament\Resources\RegistrationRequestResource\Pages\ListRegistrationRequests;
-use App\Models\Major;
 use App\Models\RegistrationRequest;
+use App\Models\Track;
+use App\Settings\RegistrationSettings;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -31,6 +32,47 @@ class RegistrationRequestResource extends Resource
     protected static ?string $modelLabel = 'طلب تسجيل';
 
     protected static ?string $pluralModelLabel = 'طلبات التسجيل';
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        // Admins can always create
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Leaders cannot create registration requests (their track is manually assigned)
+        if ($user->hasRole('leader')) {
+            return false;
+        }
+
+        // Check if track registration is open
+        $settings = app(RegistrationSettings::class);
+        if (! $settings->track_registration_open) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function canEdit($record): bool
+    {
+        $user = auth()->user();
+
+        // Admins can always edit
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Leaders cannot edit registration requests
+        if ($user->hasRole('leader')) {
+            return false;
+        }
+
+        // Regular students can only edit their own requests
+        return $record->user_id === $user->id;
+    }
 
     public static function getEloquentQuery(): Builder
     {
@@ -82,7 +124,7 @@ class RegistrationRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'majorRegistrationRequests.major']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'trackRegistrationRequests.track']))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -102,7 +144,7 @@ class RegistrationRequestResource extends Resource
                     ->label('المعدل')
                     ->sortable(),
                 TextColumn::make('المسارات')
-                    ->getStateUsing(fn ($record) => $record->majorRegistrationRequests->pluck('major.name'))
+                    ->getStateUsing(fn ($record) => $record->trackRegistrationRequests->pluck('track.name'))
                     ->label('رغبات التسكين'),
             ])
             ->defaultSort('user.gpa', 'desc')
@@ -139,45 +181,63 @@ class RegistrationRequestResource extends Resource
 
     public static function getFormFields(): array
     {
+        // Get available tracks count (excluding leader-only for non-admin/non-leader users)
+        $trackQuery = Track::query();
+        $user = auth()->user();
+
+        // Non-admin and non-leader users should not see leader-only tracks
+        if (! $user->hasRole('admin') && ! $user->hasRole('leader')) {
+            $trackQuery->where('is_leader_only', false);
+        }
+
+        $trackCount = $trackQuery->count();
+
         return [
-            Repeater::make('majorRegistrationRequests')
+            Repeater::make('trackRegistrationRequests')
                 ->columnSpanFull()
                 ->label('رغبات التسكين')
-                ->relationship('majorRegistrationRequests')
+                ->relationship('trackRegistrationRequests')
                 ->live()
                 ->deletable(false)
                 ->addable(false)
-                ->minItems(fn () => Major::query()->count())
-                ->maxItems(fn () => Major::query()->count())
-                ->defaultItems(fn () => Major::query()->count())
+                ->minItems(fn () => $trackCount)
+                ->maxItems(fn () => $trackCount)
+                ->defaultItems(fn () => $trackCount)
                 ->schema([
                     Hidden::make('sort')
                         ->label('ترتيب')
                         ->default(function (Get $get, $component) {
-                            $requests = $get('data.majorRegistrationRequests', true);
+                            $requests = $get('data.trackRegistrationRequests', true);
                             $path = explode('.', $component->getStatePath())[2];
 
                             return array_search($path, array_keys($requests));
                         })
                         ->required(),
-                    Select::make('major_id')
+                    Select::make('track_id')
                         ->label(function (Get $get, $component): ?string {
                             return 'الرغبة '.($component->getParentRepeaterItemIndex() + 1);
                         })
                         ->live()
-                        ->relationship('major', 'name')
+                        ->relationship('track', 'name')
                         ->options(function (Get $get) {
-                            // Retrieve current requests to exclude already selected majors
-                            $requests = $get('data.majorRegistrationRequests', true);
+                            // Retrieve current requests to exclude already selected tracks
+                            $requests = $get('data.trackRegistrationRequests', true);
                             $requests = array_values($requests);
+                            $requests = array_filter($requests, fn ($request) => ! empty($request['track_id']));
 
-                            $selectedIds = array_map(fn ($request) => $request['major_id'], $requests);
+                            $selectedIds = array_map(fn ($request) => $request['track_id'], $requests);
                             $selectedIds = array_filter($selectedIds, fn ($id) => $id !== null);
 
-                            return Major::query()
-                                ->whereNotIn('id', $selectedIds)
-                                ->get()
-                                ->mapWithKeys(fn ($major) => [$major->id => $major->name]);
+                            $query = Track::query()->whereNotIn('id', $selectedIds);
+
+                            // Filter out leader-only tracks for non-admin/non-leader users
+                            $user = auth()->user();
+                            if (! $user->hasRole('admin') && ! $user->hasRole('leader')) {
+                                $query->where('is_leader_only', false);
+                            }
+
+                            return $query->get()
+                                ->mapWithKeys(fn ($track) => [$track->id => $track->name]);
                         })
                         ->searchable()
                         ->preload()

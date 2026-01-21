@@ -9,6 +9,7 @@ use Filament\Actions\Imports\Models\Import;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class UserImporter extends Importer
 {
@@ -51,7 +52,7 @@ class UserImporter extends Importer
         $studentId = static::normalizeStudentId($this->data['student_id']);
         $email = 's'.$studentId.'@uqu.edu.sa';
 
-        return User::firstOrNew(['student_id' => $studentId])
+        $user = User::firstOrNew(['student_id' => $studentId])
             ->fill([
                 'name' => $this->data['name'],
                 'email' => $email,
@@ -60,6 +61,18 @@ class UserImporter extends Importer
                 // Normalize GPA (as fallback, castStateUsing() should have already normalized it)
                 'gpa' => static::normalizeGpa($this->data['gpa']),
             ]);
+
+        return $user;
+    }
+
+    protected function afterSave(): void
+    {
+        // Assign student role to the imported user
+        $studentRole = Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']);
+
+        if (! $this->record->hasRole('student')) {
+            $this->record->assignRole($studentRole);
+        }
     }
 
     /**

@@ -2,33 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class MajorRegistrationRequest extends Pivot
+class TrackRegistrationRequest extends Model
 {
     use LogsActivity;
-
-    public $incrementing = true;
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();
     }
 
-    protected $table = 'major_registration_request';
-
     protected $fillable = [
-        'major_id',
+        'track_id',
         'registration_request_id',
         'sort',
     ];
 
-    public function major(): BelongsTo
+    public function track(): BelongsTo
     {
-        return $this->belongsTo(Major::class);
+        return $this->belongsTo(Track::class);
     }
 
     public function registrationRequest(): BelongsTo

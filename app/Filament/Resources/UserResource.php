@@ -28,6 +28,8 @@ class UserResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+
     public static function form(Schema $schema): Schema
     {
         return $schema
