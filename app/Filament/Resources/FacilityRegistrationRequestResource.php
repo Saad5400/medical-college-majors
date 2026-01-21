@@ -104,10 +104,6 @@ class FacilityRegistrationRequestResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->afterStateUpdated(function (callable $set): void {
-                        $set('month_index', null);
-                        $set('wishes', static::getBlankWishesState());
-                    })
                     ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->required(),
                 Select::make('month_index')
@@ -119,9 +115,6 @@ class FacilityRegistrationRequestResource extends Resource
                         $record,
                     ))
                     ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
-                    ->afterStateUpdated(function (callable $set): void {
-                        $set('wishes', static::getBlankWishesState());
-                    })
                     ->required()
                     ->live(),
                 ...static::getWishFormFields(),
@@ -291,14 +284,6 @@ class FacilityRegistrationRequestResource extends Resource
         $monthIndex = static::resolveMonthIndex($get, $record);
 
         return $monthIndex !== null;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private static function getBlankWishesState(): array
-    {
-        return array_fill(0, self::WISH_COUNT, []);
     }
 
     /**
