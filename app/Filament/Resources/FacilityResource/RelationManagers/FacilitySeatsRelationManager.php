@@ -5,12 +5,14 @@ namespace App\Filament\Resources\FacilityResource\RelationManagers;
 use App\Enums\Month;
 use App\Models\FacilitySeat;
 use App\Models\Specialization;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
@@ -46,6 +48,29 @@ class FacilitySeatsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->form($this->getFormSchema()),
+                Action::make('createForAllMonths')
+                    ->label('إضافة مقعد لكل الشهور')
+                    ->form($this->getBulkCreateFormSchema())
+                    ->action(function (array $data): void {
+                        $createdCount = $this->createSeatsForAllMonths(
+                            (int) $data['specialization_id'],
+                            (int) $data['max_seats'],
+                        );
+
+                        if ($createdCount === 0) {
+                            Notification::make()
+                                ->title('لا توجد أشهر متاحة لهذا التخصص.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title("تمت إضافة المقاعد لعدد {$createdCount} شهرًا.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->recordActions([
                 EditAction::make()
@@ -84,6 +109,26 @@ class FacilitySeatsRelationManager extends RelationManager
                     $get('specialization_id'),
                     $record?->id,
                 ))
+                ->required(),
+            TextInput::make('max_seats')
+                ->label('الحد الأقصى للمقاعد')
+                ->required()
+                ->integer()
+                ->minValue(0),
+        ];
+    }
+
+    /**
+     * @return array<int, \Filament\Forms\Components\Component>
+     */
+    private function getBulkCreateFormSchema(): array
+    {
+        return [
+            Select::make('specialization_id')
+                ->label('التخصص')
+                ->searchable()
+                ->preload()
+                ->options(fn (): array => $this->getAvailableSpecializationOptions(null))
                 ->required(),
             TextInput::make('max_seats')
                 ->label('الحد الأقصى للمقاعد')
@@ -171,6 +216,58 @@ class FacilitySeatsRelationManager extends RelationManager
         }
 
         return $options;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function getAvailableMonthsForSpecialization(int $specializationId): array
+    {
+        $blockedMonths = $this->getBlockedMonths($specializationId);
+        $durationMonths = $this->normalizeDuration(
+            Specialization::query()->whereKey($specializationId)->value('duration_months'),
+        );
+        $availableMonths = [];
+
+        foreach (Month::orderFrom() as $month) {
+            if (! $this->isRangeAvailable($month, $durationMonths, $blockedMonths)) {
+                continue;
+            }
+
+            $availableMonths[] = $month;
+            $endMonth = min(12, $month + $durationMonths - 1);
+
+            for ($blockedMonth = $month; $blockedMonth <= $endMonth; $blockedMonth++) {
+                $blockedMonths[] = $blockedMonth;
+            }
+
+            $blockedMonths = array_values(array_unique($blockedMonths));
+            sort($blockedMonths);
+        }
+
+        return $availableMonths;
+    }
+
+    private function createSeatsForAllMonths(int $specializationId, int $maxSeats): int
+    {
+        $months = $this->getAvailableMonthsForSpecialization($specializationId);
+
+        if ($months === []) {
+            return 0;
+        }
+
+        $payload = array_map(
+            fn (int $month): array => [
+                'specialization_id' => $specializationId,
+                'month_index' => $month,
+                'max_seats' => $maxSeats,
+            ],
+            $months,
+        );
+
+        $this->getOwnerRecord()->facilitySeats()->createMany($payload);
+
+        return count($months);
     }
 
     /**
