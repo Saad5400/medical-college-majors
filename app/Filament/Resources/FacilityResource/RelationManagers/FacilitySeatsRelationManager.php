@@ -38,6 +38,7 @@ class FacilitySeatsRelationManager extends RelationManager
                     ->sortable()
                     ->formatStateUsing(fn (int $state): string => Month::labelFor($state)),
                 TextColumn::make('specialization.name')
+                    ->sortable()
                     ->label('التخصص')
                     ->searchable(),
                 TextColumn::make('max_seats')
