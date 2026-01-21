@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Major;
+use App\Models\Track;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Role;
@@ -18,11 +17,14 @@ class DatabaseSeeder extends Seeder
     {
         Artisan::call('permissions:sync', ['-P' => true]);
 
-        if (Role::query()->where('name', 'admin')->exists()) {
+        // Create roles if they don't exist
+        Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'student']);
+        Role::firstOrCreate(['name' => 'leader']);
+
+        if (User::query()->where('email', 'sdbtwa@gmail.com')->exists()) {
             return;
         }
-
-        $admin = Role::query()->create(['name' => 'admin']);
 
         $saad = User::query()->create([
             'name' => 'Saad Batwa',
@@ -30,10 +32,10 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('1'),
         ]);
 
-        $saad->assignRole($admin);
+        $saad->assignRole('admin');
 
         for ($i = 0; $i < 15; $i++) {
-            Major::query()->create([
+            Track::query()->create([
                 'name' => 'مسار رقم '.($i + 1),
                 'max_users' => 18,
             ]);

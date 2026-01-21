@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\FacilityType;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class Major extends Model
+class Facility extends Model
 {
     use LogsActivity;
 
@@ -19,16 +19,18 @@ class Major extends Model
 
     protected $fillable = [
         'name',
-        'max_users',
+        'type',
     ];
 
-    public function registrationRequests(): BelongsToMany
+    protected function casts(): array
     {
-        return $this->belongsToMany(RegistrationRequest::class)->withPivot('sort');
+        return [
+            'type' => FacilityType::class,
+        ];
     }
 
-    public function users(): HasMany
+    public function facilitySeats(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(FacilitySeat::class);
     }
 }

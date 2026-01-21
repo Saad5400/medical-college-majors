@@ -2,25 +2,29 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\MajorResource\Pages\CreateMajor;
-use App\Filament\Resources\MajorResource\Pages\EditMajor;
-use App\Filament\Resources\MajorResource\Pages\ListMajors;
-use App\Filament\Resources\MajorResource\RelationManagers\UsersRelationManager;
-use App\Models\Major;
+use App\Filament\Resources\TrackResource\Pages\CreateTrack;
+use App\Filament\Resources\TrackResource\Pages\EditTrack;
+use App\Filament\Resources\TrackResource\Pages\ListTracks;
+use App\Filament\Resources\TrackResource\RelationManagers\TrackSpecializationsRelationManager;
+use App\Filament\Resources\TrackResource\RelationManagers\UsersRelationManager;
+use App\Models\Track;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
-class MajorResource extends Resource
+class TrackResource extends Resource
 {
-    protected static ?string $model = Major::class;
+    protected static ?string $model = Track::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
@@ -41,6 +45,28 @@ class MajorResource extends Resource
                     ->required()
                     ->integer()
                     ->minValue(0),
+                Toggle::make('is_leader_only')
+                    ->label('مسار للمشرفين فقط')
+                    ->helperText('إذا تم تفعيل هذا الخيار، لن يظهر هذا المسار للطلاب العاديين')
+                    ->default(false),
+                CheckboxList::make('elective_months')
+                    ->label('الأشهر الاختيارية')
+                    ->helperText('حدد الأشهر التي يمكن للطالب فيها اختيار تخصص/مستشفى مختلف')
+                    ->options([
+                        1 => 'الشهر 1',
+                        2 => 'الشهر 2',
+                        3 => 'الشهر 3',
+                        4 => 'الشهر 4',
+                        5 => 'الشهر 5',
+                        6 => 'الشهر 6',
+                        7 => 'الشهر 7',
+                        8 => 'الشهر 8',
+                        9 => 'الشهر 9',
+                        10 => 'الشهر 10',
+                        11 => 'الشهر 11',
+                        12 => 'الشهر 12',
+                    ])
+                    ->columns(4),
             ]);
     }
 
@@ -48,31 +74,31 @@ class MajorResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                // Count users per major - handle varchar major_id vs bigint id
+                // Count users per track - handle varchar track_id vs bigint id
                 $usersCountSubquery = DB::table('users')
-                    ->select('major_id', DB::raw('COUNT(*) as count'))
-                    ->whereNotNull('major_id')
-                    ->groupBy('major_id');
+                    ->select('track_id', DB::raw('COUNT(*) as count'))
+                    ->whereNotNull('track_id')
+                    ->groupBy('track_id');
 
                 $query->leftJoinSub($usersCountSubquery, 'users_counts', function ($join) {
-                    $join->whereRaw('"majors"."id"::text = "users_counts"."major_id"');
+                    $join->whereRaw('"tracks"."id"::text = "users_counts"."track_id"');
                 });
 
                 // Pre-compute first choice counts using a single aggregated subquery
                 // A "first choice" is where sort equals the minimum sort for that registration_request
-                $firstChoiceSubquery = DB::table('major_registration_request as mrr1')
-                    ->select('mrr1.major_id', DB::raw('COUNT(*) as count'))
-                    ->whereRaw('mrr1.sort = (
-                        SELECT MIN(mrr2.sort) 
-                        FROM major_registration_request mrr2 
-                        WHERE mrr2.registration_request_id = mrr1.registration_request_id
+                $firstChoiceSubquery = DB::table('track_registration_request as trr1')
+                    ->select('trr1.track_id', DB::raw('COUNT(*) as count'))
+                    ->whereRaw('trr1.sort = (
+                        SELECT MIN(trr2.sort)
+                        FROM track_registration_request trr2
+                        WHERE trr2.registration_request_id = trr1.registration_request_id
                     )')
-                    ->groupBy('mrr1.major_id');
+                    ->groupBy('trr1.track_id');
 
                 $query->leftJoinSub($firstChoiceSubquery, 'first_choices', function ($join) {
-                    $join->on('majors.id', '=', 'first_choices.major_id');
+                    $join->on('tracks.id', '=', 'first_choices.track_id');
                 })
-                    ->addSelect('majors.*')
+                    ->addSelect('tracks.*')
                     ->addSelect(DB::raw('COALESCE(users_counts.count, 0) as users_count'))
                     ->addSelect(DB::raw('COALESCE(first_choices.count, 0) as first_choice_users_count'));
             })
@@ -92,6 +118,10 @@ class MajorResource extends Resource
                     ->searchable(),
                 TextColumn::make('max_users')
                     ->label('الحد الأقصى لعدد الطلاب')
+                    ->sortable(),
+                IconColumn::make('is_leader_only')
+                    ->label('للمشرفين فقط')
+                    ->boolean()
                     ->sortable(),
                 TextColumn::make('first_choice_users_count')
                     ->label('عدد الطلاب الذين إختاروه كأول رغبة')
@@ -121,15 +151,16 @@ class MajorResource extends Resource
     {
         return [
             UsersRelationManager::class,
+            TrackSpecializationsRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListMajors::route('/'),
-            'create' => CreateMajor::route('/create'),
-            'edit' => EditMajor::route('/{record}/edit'),
+            'index' => ListTracks::route('/'),
+            'create' => CreateTrack::route('/create'),
+            'edit' => EditTrack::route('/{record}/edit'),
         ];
     }
 }
