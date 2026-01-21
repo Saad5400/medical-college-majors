@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TrackResource\Pages;
 
+use App\Enums\Month;
 use App\Filament\Resources\TrackResource;
 use App\Models\Specialization;
 use App\Models\Track;
@@ -55,7 +56,7 @@ class TrackSchedule extends Page
             'name' => $track->name,
         ])->all();
 
-        $this->months = range(1, 12);
+        $this->months = Month::orderFrom();
         $this->cells = [];
 
         foreach ($tracks as $track) {

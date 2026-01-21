@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityResource\RelationManagers;
 
+use App\Enums\Month;
 use App\Models\FacilitySeat;
 use App\Models\Specialization;
 use Filament\Actions\CreateAction;
@@ -33,7 +34,7 @@ class FacilitySeatsRelationManager extends RelationManager
                 TextColumn::make('month_index')
                     ->label('الشهر')
                     ->sortable()
-                    ->formatStateUsing(fn (int $state): string => "الشهر {$state}"),
+                    ->formatStateUsing(fn (int $state): string => Month::labelFor($state)),
                 TextColumn::make('specialization.name')
                     ->label('التخصص')
                     ->searchable(),
@@ -161,12 +162,12 @@ class FacilitySeatsRelationManager extends RelationManager
             : 1;
         $options = [];
 
-        for ($month = 1; $month <= 12; $month++) {
+        foreach (Month::orderFrom() as $month) {
             if (! $this->isRangeAvailable($month, $durationMonths, $blockedMonths)) {
                 continue;
             }
 
-            $options[$month] = "الشهر {$month}";
+            $options[$month] = Month::labelFor($month);
         }
 
         return $options;

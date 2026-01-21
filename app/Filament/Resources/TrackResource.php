@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Month;
 use App\Filament\Resources\TrackResource\Pages\CreateTrack;
 use App\Filament\Resources\TrackResource\Pages\EditTrack;
 use App\Filament\Resources\TrackResource\Pages\ListTracks;
@@ -55,20 +56,7 @@ class TrackResource extends Resource
                 CheckboxList::make('elective_months')
                     ->label('الأشهر الاختيارية')
                     ->helperText('حدد الأشهر التي يمكن للطالب فيها اختيار تخصص/مستشفى مختلف')
-                    ->options([
-                        1 => 'الشهر 1',
-                        2 => 'الشهر 2',
-                        3 => 'الشهر 3',
-                        4 => 'الشهر 4',
-                        5 => 'الشهر 5',
-                        6 => 'الشهر 6',
-                        7 => 'الشهر 7',
-                        8 => 'الشهر 8',
-                        9 => 'الشهر 9',
-                        10 => 'الشهر 10',
-                        11 => 'الشهر 11',
-                        12 => 'الشهر 12',
-                    ])
+                    ->options(Month::options())
                     ->rule(function (?Track $record): \Closure {
                         return function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
                             if (! $record || ! is_array($value)) {
@@ -82,7 +70,7 @@ class TrackResource extends Resource
                             }
 
                             $labels = implode('، ', array_map(
-                                fn (int $month): string => "الشهر {$month}",
+                                fn (int $month): string => Month::labelFor($month),
                                 $conflicts,
                             ));
 

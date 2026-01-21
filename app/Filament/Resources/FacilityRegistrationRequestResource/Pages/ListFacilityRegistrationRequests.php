@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityRegistrationRequestResource\Pages;
 
+use App\Enums\Month;
 use App\Filament\Resources\FacilityRegistrationRequestResource;
 use App\Models\FacilityRegistrationRequest;
 use App\Models\FacilitySeat;
@@ -29,14 +30,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                         ->searchable()
                         ->preload()
                         ->label('الشهر')
-                        ->options(function () {
-                            $options = [];
-                            for ($i = 1; $i <= 12; $i++) {
-                                $options[$i] = "الشهر {$i}";
-                            }
-
-                            return $options;
-                        })
+                        ->options(Month::options())
                         ->required(),
                 ])
                 ->action(function (array $data) {
@@ -82,8 +76,10 @@ class ListFacilityRegistrationRequests extends ListRecords
                         }
                     }
 
+                    $monthLabel = Month::labelFor($monthIndex);
+
                     Notification::make()
-                        ->title("تم توزيع الطلاب على المنشآت للشهر {$monthIndex}")
+                        ->title("تم توزيع الطلاب على المنشآت لشهر {$monthLabel}")
                         ->success()
                         ->send();
                 })

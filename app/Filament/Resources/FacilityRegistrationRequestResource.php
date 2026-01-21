@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Month;
 use App\Filament\Resources\FacilityRegistrationRequestResource\Pages\CreateFacilityRegistrationRequest;
 use App\Filament\Resources\FacilityRegistrationRequestResource\Pages\EditFacilityRegistrationRequest;
 use App\Filament\Resources\FacilityRegistrationRequestResource\Pages\ListFacilityRegistrationRequests;
@@ -140,7 +141,7 @@ class FacilityRegistrationRequestResource extends Resource
                     ->sortable(),
                 TextColumn::make('month_index')
                     ->label('الشهر')
-                    ->formatStateUsing(fn (int $state): string => "الشهر {$state}")
+                    ->formatStateUsing(fn (int $state): string => Month::labelFor($state))
                     ->sortable(),
                 TextColumn::make('assignedFacility.name')
                     ->label('المنشأة المعينة')
@@ -302,23 +303,25 @@ class FacilityRegistrationRequestResource extends Resource
         $scheduleMonths = static::getScheduleMonths($trackSpecializations, $track->elective_months ?? []);
         $blockedMonths = static::getBlockedMonthsForUser($user, $trackSpecializations, $record?->id);
 
-        $options = [];
+        $availableMonths = [];
 
         foreach ($scheduleMonths as $monthIndex) {
             if (in_array($monthIndex, $blockedMonths, true)) {
                 continue;
             }
 
-            $options[$monthIndex] = "الشهر {$monthIndex}";
+            $availableMonths[] = (int) $monthIndex;
         }
 
-        if ($record?->month_index && ! array_key_exists($record->month_index, $options)) {
-            $options[$record->month_index] = "الشهر {$record->month_index}";
+        if ($record?->month_index) {
+            $recordMonth = (int) $record->month_index;
+
+            if (! in_array($recordMonth, $availableMonths, true)) {
+                $availableMonths[] = $recordMonth;
+            }
         }
 
-        ksort($options);
-
-        return $options;
+        return Month::optionsFor($availableMonths);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TrackResource\RelationManagers;
 
+use App\Enums\Month;
 use App\Models\Specialization;
 use App\Models\TrackSpecialization;
 use Filament\Actions\CreateAction;
@@ -32,7 +33,7 @@ class TrackSpecializationsRelationManager extends RelationManager
                 TextColumn::make('month_index')
                     ->label('الشهر')
                     ->sortable()
-                    ->formatStateUsing(fn (int $state): string => "الشهر {$state}"),
+                    ->formatStateUsing(fn (int $state): string => Month::labelFor($state)),
                 TextColumn::make('specialization.name')
                     ->label('التخصص')
                     ->searchable(),
@@ -45,7 +46,10 @@ class TrackSpecializationsRelationManager extends RelationManager
             ->defaultSort('month_index')
             ->headerActions([
                 CreateAction::make()
-                    ->form($this->getFormSchema()),
+                    ->form($this->getFormSchema())
+                    ->preserveFormDataWhenCreatingAnother(
+                        fn (array $data): array => $this->getPreservedFormDataWhenCreatingAnother($data),
+                    ),
             ])
             ->recordActions([
                 EditAction::make()
@@ -108,7 +112,7 @@ class TrackSpecializationsRelationManager extends RelationManager
                         sort($conflicts);
 
                         $labels = implode('، ', array_map(
-                            fn (int $month): string => "الشهر {$month}",
+                            fn (int $month): string => Month::labelFor($month),
                             $conflicts,
                         ));
 
@@ -181,12 +185,12 @@ class TrackSpecializationsRelationManager extends RelationManager
             : 1;
         $options = [];
 
-        for ($month = 1; $month <= 12; $month++) {
+        foreach (Month::orderFrom() as $month) {
             if (! $this->isRangeAvailable($month, $durationMonths, $blockedMonths)) {
                 continue;
             }
 
-            $options[$month] = "الشهر {$month}";
+            $options[$month] = Month::labelFor($month);
         }
 
         return $options;
@@ -213,5 +217,57 @@ class TrackSpecializationsRelationManager extends RelationManager
             ))
             ->mapWithKeys(fn (Specialization $specialization): array => [$specialization->id => $specialization->name])
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function getPreservedFormDataWhenCreatingAnother(array $data): array
+    {
+        $nextMonth = $this->getNextAvailableMonthAfter(
+            isset($data['month_index']) ? (int) $data['month_index'] : null,
+            isset($data['specialization_id']) ? (int) $data['specialization_id'] : null,
+        );
+
+        if (! $nextMonth) {
+            return [];
+        }
+
+        return ['month_index' => $nextMonth];
+    }
+
+    private function getNextAvailableMonthAfter(?int $startMonth, ?int $specializationId): ?int
+    {
+        if (! $startMonth) {
+            return null;
+        }
+
+        $durationMonths = $specializationId
+            ? $this->normalizeDuration(
+                Specialization::query()->whereKey($specializationId)->value('duration_months'),
+            )
+            : 1;
+        $startMonth = max(1, min(12, $startMonth));
+        $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+        $blockedMonths = $this->getBlockedMonths();
+
+        for ($month = $startMonth; $month <= $endMonth; $month++) {
+            $blockedMonths[] = $month;
+        }
+
+        $blockedMonths = array_values(array_unique($blockedMonths));
+        sort($blockedMonths);
+
+        for ($month = $endMonth + 1; $month <= 12; $month++) {
+            if (in_array($month, $blockedMonths, true)) {
+                continue;
+            }
+
+            return $month;
+        }
+
+        return null;
     }
 }

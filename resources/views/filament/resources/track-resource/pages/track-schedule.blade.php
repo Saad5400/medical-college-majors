@@ -18,7 +18,7 @@
                     @foreach ($months as $month)
                         <tr class="odd:bg-white even:bg-gray-50/60 dark:odd:bg-gray-950 dark:even:bg-gray-900/40">
                             <th class="sticky left-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 text-right font-semibold text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
-                                الشهر {{ $month }}
+                                {{ \App\Enums\Month::labelFor($month) }}
                             </th>
                             @foreach ($tracks as $track)
                                 @php
