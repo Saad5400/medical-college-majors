@@ -102,9 +102,11 @@ class TrackSchedule extends Page
                 }
 
                 $trackCells[$month] = [
-                    'label' => 'اختياري',
+                    'label' => 'Elective',
                     'color' => '#cc66ff',
                     'text_color' => $this->getReadableTextColor('#cc66ff'),
+                    'lang' => 'en',
+                    'dir' => 'ltr',
                     'rowspan' => 1,
                     'is_placeholder' => false,
                 ];

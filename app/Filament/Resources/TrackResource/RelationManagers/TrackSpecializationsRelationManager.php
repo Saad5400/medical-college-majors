@@ -268,6 +268,14 @@ class TrackSpecializationsRelationManager extends RelationManager
             return $month;
         }
 
+        for ($month = 1; $month <= $endMonth; $month++) {
+            if (in_array($month, $blockedMonths, true)) {
+                continue;
+            }
+
+            return $month;
+        }
+
         return null;
     }
 }
