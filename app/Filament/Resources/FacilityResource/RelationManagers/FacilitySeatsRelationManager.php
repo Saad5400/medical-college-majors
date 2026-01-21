@@ -71,6 +71,26 @@ class FacilitySeatsRelationManager extends RelationManager
                             ->success()
                             ->send();
                     }),
+                Action::make('createForAllSpecializations')
+                    ->label('إضافة مقعد لكل الشهور ولكل التخصصات')
+                    ->form($this->getBulkCreateAllSpecializationsFormSchema())
+                    ->action(function (array $data): void {
+                        $createdCount = $this->createSeatsForAllSpecializations((int) $data['max_seats']);
+
+                        if ($createdCount === 0) {
+                            Notification::make()
+                                ->title('لا توجد أشهر متاحة للتخصصات المحددة.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title("تمت إضافة المقاعد لعدد {$createdCount} شهرًا.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->recordActions([
                 EditAction::make()
@@ -130,6 +150,20 @@ class FacilitySeatsRelationManager extends RelationManager
                 ->preload()
                 ->options(fn (): array => $this->getAvailableSpecializationOptions(null))
                 ->required(),
+            TextInput::make('max_seats')
+                ->label('الحد الأقصى للمقاعد')
+                ->required()
+                ->integer()
+                ->minValue(0),
+        ];
+    }
+
+    /**
+     * @return array<int, \Filament\Forms\Components\Component>
+     */
+    private function getBulkCreateAllSpecializationsFormSchema(): array
+    {
+        return [
             TextInput::make('max_seats')
                 ->label('الحد الأقصى للمقاعد')
                 ->required()
@@ -221,11 +255,11 @@ class FacilitySeatsRelationManager extends RelationManager
     /**
      * @return array<int, int>
      */
-    private function getAvailableMonthsForSpecialization(int $specializationId): array
+    private function getAvailableMonthsForSpecialization(int $specializationId, ?int $durationMonths = null): array
     {
         $blockedMonths = $this->getBlockedMonths($specializationId);
         $durationMonths = $this->normalizeDuration(
-            Specialization::query()->whereKey($specializationId)->value('duration_months'),
+            $durationMonths ?? Specialization::query()->whereKey($specializationId)->value('duration_months'),
         );
         $availableMonths = [];
 
@@ -268,6 +302,40 @@ class FacilitySeatsRelationManager extends RelationManager
         $this->getOwnerRecord()->facilitySeats()->createMany($payload);
 
         return count($months);
+    }
+
+    private function createSeatsForAllSpecializations(int $maxSeats): int
+    {
+        $specializations = Specialization::query()
+            ->where('facility_type', $this->getOwnerRecord()->type)
+            ->orderBy('name')
+            ->get(['id', 'duration_months']);
+        $createdCount = 0;
+
+        foreach ($specializations as $specialization) {
+            $months = $this->getAvailableMonthsForSpecialization(
+                $specialization->id,
+                $specialization->duration_months,
+            );
+
+            if ($months === []) {
+                continue;
+            }
+
+            $payload = array_map(
+                fn (int $month): array => [
+                    'specialization_id' => $specialization->id,
+                    'month_index' => $month,
+                    'max_seats' => $maxSeats,
+                ],
+                $months,
+            );
+
+            $this->getOwnerRecord()->facilitySeats()->createMany($payload);
+            $createdCount += count($months);
+        }
+
+        return $createdCount;
     }
 
     /**
