@@ -55,6 +55,12 @@ class UserResource extends Resource
                     ->label('رقم الطالب')
                     ->maxLength(255)
                     ->default(null),
+                Select::make('track_id')
+                    ->label('المسار')
+                    ->relationship('track', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
                 Select::make('roles')
                     ->label('الأدوار')
                     ->relationship('roles', 'name')

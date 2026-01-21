@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\TrackResource\RelationManagers;
 
 use App\Models\User;
-use Filament\Actions\AttachAction;
-use Filament\Actions\DetachAction;
-use Filament\Actions\DetachBulkAction;
+use Filament\Actions\AssociateAction;
+use Filament\Actions\DissociateAction;
+use Filament\Actions\DissociateBulkAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UsersRelationManager extends RelationManager
 {
@@ -42,28 +44,55 @@ class UsersRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                AttachAction::make()
+                AssociateAction::make()
                     ->preloadRecordSelect()
-                    ->recordSelect(
-                        fn () => \Filament\Forms\Components\Select::make('recordId')
+                    ->recordSelect(function (Select $select): Select {
+                        return $select
                             ->label('الطالب')
-                            ->options(
-                                User::query()
-                                    ->whereNull('track_id')
-                                    ->pluck('name', 'id')
-                            )
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                    ),
+                            ->hiddenLabel(false)
+                            ->options(fn (Select $component): array => $this->getAssignableStudentOptions(
+                                $component->getOptionsLimit(),
+                            ))
+                            ->getSearchResultsUsing(fn (Select $component, string $search): array => $this->getAssignableStudentOptions(
+                                $component->getOptionsLimit(),
+                                $search,
+                            ));
+                    }),
             ])
             ->recordActions([
-                DetachAction::make(),
+                DissociateAction::make(),
             ])
             ->toolbarActions([
-                DetachBulkAction::make(),
+                DissociateBulkAction::make(),
             ])
             ->defaultPaginationPageOption(25)
             ->paginationPageOptions([25, 50, 100]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getAssignableStudentOptions(int $optionsLimit, ?string $search = null): array
+    {
+        $query = User::query()
+            ->whereNull('track_id')
+            ->whereHas('roles', function (Builder $query): void {
+                $query->where('name', 'student');
+            });
+
+        if (filled($search)) {
+            $query->where(function (Builder $query) use ($search): void {
+                $query
+                    ->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%")
+                    ->orWhere('student_id', 'ilike', "%{$search}%");
+            });
+        }
+
+        return $query
+            ->orderBy('name')
+            ->limit($optionsLimit)
+            ->pluck('name', 'id')
+            ->all();
     }
 }
