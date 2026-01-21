@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <div dir="ltr" style="overflow-x: auto; padding: 16px 12px;">
-        <div style="display: inline-block; min-width: 100%; border: 1px solid #e5e7eb; border-radius: 16px; background-color: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); overflow: hidden;">
+        <div style="display: inline-block; min-width: 100%; border: 1px solid #e5e7eb; border-radius: 16px; background-color: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
             <table style="width: max-content; min-width: 100%; border-collapse: collapse; text-align: center; font-size: 14px;">
                 <thead>
                     <tr style="background-color: #e0e7ff; color: #1e293b;">
