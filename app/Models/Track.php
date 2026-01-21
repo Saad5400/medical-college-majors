@@ -24,17 +24,16 @@ class Track extends Model
         'elective_months',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_leader_only' => 'boolean',
-            'elective_months' => 'array',
-        ];
-    }
+    protected $casts = [
+        'is_leader_only' => 'boolean',
+        'elective_months' => 'array',
+    ];
 
     public function registrationRequests(): BelongsToMany
     {
-        return $this->belongsToMany(RegistrationRequest::class)->withPivot('sort');
+        return $this->belongsToMany(RegistrationRequest::class, 'track_registration_requests')
+            ->withPivot('sort')
+            ->withTimestamps();
     }
 
     public function users(): HasMany

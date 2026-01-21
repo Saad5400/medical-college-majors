@@ -223,6 +223,7 @@ class RegistrationRequestResource extends Resource
                             // Retrieve current requests to exclude already selected tracks
                             $requests = $get('data.trackRegistrationRequests', true);
                             $requests = array_values($requests);
+                            $requests = array_filter($requests, fn ($request) => ! empty($request['track_id']));
 
                             $selectedIds = array_map(fn ($request) => $request['track_id'], $requests);
                             $selectedIds = array_filter($selectedIds, fn ($id) => $id !== null);

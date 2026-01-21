@@ -32,6 +32,8 @@ class TrackResource extends Resource
 
     protected static ?string $pluralModelLabel = 'المسارات';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -86,11 +88,11 @@ class TrackResource extends Resource
 
                 // Pre-compute first choice counts using a single aggregated subquery
                 // A "first choice" is where sort equals the minimum sort for that registration_request
-                $firstChoiceSubquery = DB::table('track_registration_request as trr1')
+                $firstChoiceSubquery = DB::table('track_registration_requests as trr1')
                     ->select('trr1.track_id', DB::raw('COUNT(*) as count'))
                     ->whereRaw('trr1.sort = (
                         SELECT MIN(trr2.sort)
-                        FROM track_registration_request trr2
+                        FROM track_registration_requests trr2
                         WHERE trr2.registration_request_id = trr1.registration_request_id
                     )')
                     ->groupBy('trr1.track_id');

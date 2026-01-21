@@ -61,6 +61,7 @@ class TrackSpecializationsRelationManager extends RelationManager
                             ->label('التخصص')
                             ->options(Specialization::query()->pluck('name', 'id'))
                             ->searchable()
+                            ->preload()
                             ->required(),
                     ]),
             ])
@@ -77,11 +78,14 @@ class TrackSpecializationsRelationManager extends RelationManager
 
                                 return $options;
                             })
+                            ->searchable()
+                            ->preload()
                             ->required(),
                         Select::make('specialization_id')
                             ->label('التخصص')
                             ->options(Specialization::query()->pluck('name', 'id'))
                             ->searchable()
+                            ->preload()
                             ->required(),
                     ]),
                 DeleteAction::make(),

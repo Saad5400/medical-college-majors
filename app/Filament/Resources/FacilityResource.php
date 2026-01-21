@@ -41,11 +41,14 @@ class FacilityResource extends Resource
                     ->maxLength(255),
                 Select::make('type')
                     ->label('نوع المنشأة')
+                    ->searchable()
+                    ->preload()
                     ->required()
                     ->options([
                         FacilityType::Hospital->value => FacilityType::Hospital->label(),
                         FacilityType::HealthcareCenter->value => FacilityType::HealthcareCenter->label(),
-                    ]),
+                    ])
+                    ->default(FacilityType::Hospital->value),
             ]);
     }
 

@@ -29,7 +29,9 @@ class RegistrationRequest extends Model
 
     public function tracks(): BelongsToMany
     {
-        return $this->belongsToMany(Track::class);
+        return $this->belongsToMany(Track::class, 'track_registration_requests')
+            ->withPivot('sort')
+            ->withTimestamps();
     }
 
     public function trackRegistrationRequests(): HasMany

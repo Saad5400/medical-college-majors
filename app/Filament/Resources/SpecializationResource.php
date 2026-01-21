@@ -46,11 +46,14 @@ class SpecializationResource extends Resource
                     ->default(1),
                 Select::make('facility_type')
                     ->label('نوع المنشأة')
+                    ->searchable()
+                    ->preload()
                     ->required()
                     ->options([
                         FacilityType::Hospital->value => FacilityType::Hospital->label(),
                         FacilityType::HealthcareCenter->value => FacilityType::HealthcareCenter->label(),
-                    ]),
+                    ])
+                    ->default(FacilityType::Hospital->value),
             ]);
     }
 

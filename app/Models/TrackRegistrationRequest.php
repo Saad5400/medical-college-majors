@@ -16,8 +16,6 @@ class TrackRegistrationRequest extends Model
         return LogOptions::defaults()->logAll();
     }
 
-    protected $table = 'track_registration_request';
-
     protected $fillable = [
         'track_id',
         'registration_request_id',

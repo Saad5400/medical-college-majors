@@ -15,10 +15,10 @@ return new class extends Migration
         Schema::rename('majors', 'tracks');
 
         // Rename the pivot table
-        Schema::rename('major_registration_request', 'track_registration_request');
+        Schema::rename('major_registration_request', 'track_registration_requests');
 
         // Update the foreign key column in the pivot table
-        Schema::table('track_registration_request', function (Blueprint $table) {
+        Schema::table('track_registration_requests', function (Blueprint $table) {
             $table->renameColumn('major_id', 'track_id');
         });
 
@@ -38,12 +38,12 @@ return new class extends Migration
             $table->renameColumn('track_id', 'major_id');
         });
 
-        Schema::table('track_registration_request', function (Blueprint $table) {
+        Schema::table('track_registration_requests', function (Blueprint $table) {
             $table->renameColumn('track_id', 'major_id');
         });
 
         // Rename tables back
-        Schema::rename('track_registration_request', 'major_registration_request');
+        Schema::rename('track_registration_requests', 'major_registration_request');
         Schema::rename('tracks', 'majors');
     }
 };

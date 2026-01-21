@@ -53,6 +53,7 @@ class UsersRelationManager extends RelationManager
                                     ->pluck('name', 'id')
                             )
                             ->searchable()
+                            ->preload()
                             ->required()
                     ),
             ])

@@ -11,8 +11,6 @@ class TrackSpecialization extends Model
 {
     use LogsActivity;
 
-    protected $table = 'track_specializations';
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();

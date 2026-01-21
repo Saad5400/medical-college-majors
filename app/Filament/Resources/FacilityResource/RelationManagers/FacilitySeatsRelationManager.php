@@ -47,9 +47,12 @@ class FacilitySeatsRelationManager extends RelationManager
                             ->label('التخصص')
                             ->options(Specialization::query()->pluck('name', 'id'))
                             ->searchable()
+                            ->preload()
                             ->required(),
                         Select::make('month_index')
                             ->label('الشهر')
+                            ->searchable()
+                            ->preload()
                             ->options(function () {
                                 $options = [];
                                 for ($i = 1; $i <= 12; $i++) {
@@ -73,8 +76,11 @@ class FacilitySeatsRelationManager extends RelationManager
                             ->label('التخصص')
                             ->options(Specialization::query()->pluck('name', 'id'))
                             ->searchable()
+                            ->preload()
                             ->required(),
                         Select::make('month_index')
+                            ->searchable()
+                            ->preload()
                             ->label('الشهر')
                             ->options(function () {
                                 $options = [];

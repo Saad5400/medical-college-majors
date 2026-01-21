@@ -25,6 +25,8 @@ class ListFacilityRegistrationRequests extends ListRecords
                 ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->form([
                     Select::make('month_index')
+                        ->searchable()
+                        ->preload()
                         ->label('الشهر')
                         ->options(function () {
                             $options = [];

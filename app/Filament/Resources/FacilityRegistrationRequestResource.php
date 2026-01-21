@@ -97,6 +97,8 @@ class FacilityRegistrationRequestResource extends Resource
                     ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->required(),
                 Select::make('month_index')
+                    ->searchable()
+                    ->preload()
                     ->label('الشهر')
                     ->options(function () {
                         $options = [];
@@ -247,6 +249,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->label('التخصص (للأشهر الاختيارية)')
                         ->options(Specialization::query()->pluck('name', 'id'))
                         ->searchable()
+                        ->preload()
                         ->visible(function (Get $get) {
                             // Only show for elective months
                             $monthIndex = $get('../../month_index');
