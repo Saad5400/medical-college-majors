@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityResource\RelationManagers;
 
+use App\Models\FacilitySeat;
 use App\Models\Specialization;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -10,6 +11,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -42,61 +44,11 @@ class FacilitySeatsRelationManager extends RelationManager
             ->defaultSort('month_index')
             ->headerActions([
                 CreateAction::make()
-                    ->form([
-                        Select::make('specialization_id')
-                            ->label('التخصص')
-                            ->options(Specialization::query()->pluck('name', 'id'))
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                        Select::make('month_index')
-                            ->label('الشهر')
-                            ->searchable()
-                            ->preload()
-                            ->options(function () {
-                                $options = [];
-                                for ($i = 1; $i <= 12; $i++) {
-                                    $options[$i] = "الشهر {$i}";
-                                }
-
-                                return $options;
-                            })
-                            ->required(),
-                        TextInput::make('max_seats')
-                            ->label('الحد الأقصى للمقاعد')
-                            ->required()
-                            ->integer()
-                            ->minValue(0),
-                    ]),
+                    ->form($this->getFormSchema()),
             ])
             ->recordActions([
                 EditAction::make()
-                    ->form([
-                        Select::make('specialization_id')
-                            ->label('التخصص')
-                            ->options(Specialization::query()->pluck('name', 'id'))
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                        Select::make('month_index')
-                            ->searchable()
-                            ->preload()
-                            ->label('الشهر')
-                            ->options(function () {
-                                $options = [];
-                                for ($i = 1; $i <= 12; $i++) {
-                                    $options[$i] = "الشهر {$i}";
-                                }
-
-                                return $options;
-                            })
-                            ->required(),
-                        TextInput::make('max_seats')
-                            ->label('الحد الأقصى للمقاعد')
-                            ->required()
-                            ->integer()
-                            ->minValue(0),
-                    ]),
+                    ->form($this->getFormSchema()),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
@@ -104,5 +56,138 @@ class FacilitySeatsRelationManager extends RelationManager
             ])
             ->defaultPaginationPageOption(25)
             ->paginationPageOptions([25, 50, 100]);
+    }
+
+    /**
+     * @return array<int, \Filament\Forms\Components\Component>
+     */
+    private function getFormSchema(): array
+    {
+        return [
+            Select::make('specialization_id')
+                ->label('التخصص')
+                ->searchable()
+                ->preload()
+                ->live()
+                ->options(fn (Get $get, ?FacilitySeat $record): array => $this->getAvailableSpecializationOptions(
+                    $get('month_index'),
+                    $record?->id,
+                ))
+                ->required(),
+            Select::make('month_index')
+                ->label('الشهر')
+                ->searchable()
+                ->preload()
+                ->live()
+                ->options(fn (Get $get, ?FacilitySeat $record): array => $this->getAvailableMonthOptions(
+                    $get('specialization_id'),
+                    $record?->id,
+                ))
+                ->required(),
+            TextInput::make('max_seats')
+                ->label('الحد الأقصى للمقاعد')
+                ->required()
+                ->integer()
+                ->minValue(0),
+        ];
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function getBlockedMonths(?int $ignoreRecordId = null): array
+    {
+        $query = $this->getOwnerRecord()
+            ->facilitySeats()
+            ->with('specialization');
+
+        if ($ignoreRecordId) {
+            $query->whereKeyNot($ignoreRecordId);
+        }
+
+        $blockedMonths = [];
+
+        foreach ($query->get() as $seat) {
+            $durationMonths = $this->normalizeDuration($seat->specialization?->duration_months);
+            $startMonth = (int) $seat->month_index;
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            for ($month = $startMonth; $month <= $endMonth; $month++) {
+                $blockedMonths[$month] = true;
+            }
+        }
+
+        return array_keys($blockedMonths);
+    }
+
+    private function normalizeDuration(?int $durationMonths): int
+    {
+        return max(1, (int) $durationMonths);
+    }
+
+    /**
+     * @param  array<int, int>  $blockedMonths
+     */
+    private function isRangeAvailable(int $startMonth, int $durationMonths, array $blockedMonths): bool
+    {
+        $durationMonths = $this->normalizeDuration($durationMonths);
+        $endMonth = $startMonth + $durationMonths - 1;
+
+        if ($endMonth > 12) {
+            return false;
+        }
+
+        $range = range($startMonth, $endMonth);
+
+        return array_intersect($range, $blockedMonths) === [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getAvailableMonthOptions(?int $specializationId, ?int $ignoreRecordId = null): array
+    {
+        $blockedMonths = $this->getBlockedMonths($ignoreRecordId);
+        $durationMonths = $specializationId
+            ? $this->normalizeDuration(
+                Specialization::query()->whereKey($specializationId)->value('duration_months'),
+            )
+            : 1;
+        $options = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            if (! $this->isRangeAvailable($month, $durationMonths, $blockedMonths)) {
+                continue;
+            }
+
+            $options[$month] = "الشهر {$month}";
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getAvailableSpecializationOptions(?int $monthIndex, ?int $ignoreRecordId = null): array
+    {
+        $query = Specialization::query()
+            ->where('facility_type', $this->getOwnerRecord()->type)
+            ->orderBy('name');
+
+        if (! $monthIndex) {
+            return $query->pluck('name', 'id')->all();
+        }
+
+        $blockedMonths = $this->getBlockedMonths($ignoreRecordId);
+
+        return $query->get()
+            ->filter(fn (Specialization $specialization): bool => $this->isRangeAvailable(
+                $monthIndex,
+                $specialization->duration_months,
+                $blockedMonths,
+            ))
+            ->mapWithKeys(fn (Specialization $specialization): array => [$specialization->id => $specialization->name])
+            ->all();
     }
 }

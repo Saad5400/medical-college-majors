@@ -22,23 +22,27 @@ class DatabaseSeeder extends Seeder
         Role::firstOrCreate(['name' => 'student']);
         Role::firstOrCreate(['name' => 'leader']);
 
-        if (User::query()->where('email', 'sdbtwa@gmail.com')->exists()) {
-            return;
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'sdbtwa@gmail.com'],
+            [
+                'name' => 'Saad Batwa',
+                'password' => bcrypt('1'),
+            ]
+        );
+
+        $admin->assignRole('admin');
+
+        if (! Track::query()->exists()) {
+            for ($i = 0; $i < 15; $i++) {
+                Track::query()->create([
+                    'name' => 'مسار رقم '.($i + 1),
+                    'max_users' => 20,
+                ]);
+            }
         }
 
-        $saad = User::query()->create([
-            'name' => 'Saad Batwa',
-            'email' => 'sdbtwa@gmail.com',
-            'password' => bcrypt('1'),
-        ]);
-
-        $saad->assignRole('admin');
-
-        for ($i = 0; $i < 15; $i++) {
-            Track::query()->create([
-                'name' => 'مسار رقم '.($i + 1),
-                'max_users' => 18,
-            ]);
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(TestDataSeeder::class);
         }
     }
 }

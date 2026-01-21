@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\RegistrationSettings;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -13,9 +14,19 @@ Route::get('/', function () {
         return redirect(\App\Filament\Pages\Dashboard::getUrl());
     }
 
-    if ($user->registrationRequests()->exists()) {
-        return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('edit', ['record' => $user->registrationRequests()->first()->id]));
+    $settings = app(RegistrationSettings::class);
+
+    if ($settings->track_registration_open) {
+        if ($user->registrationRequests()->exists()) {
+            return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('edit', ['record' => $user->registrationRequests()->first()->id]));
+        }
+
+        return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('create'));
     }
 
-    return redirect(\App\Filament\Resources\RegistrationRequestResource::getUrl('create'));
+    if ($settings->facility_registration_open) {
+        return redirect(\App\Filament\Resources\FacilityRegistrationRequestResource::getUrl('index'));
+    }
+
+    return redirect(\App\Filament\Pages\Dashboard::getUrl());
 });
