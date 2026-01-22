@@ -124,6 +124,13 @@ class FacilityRegistrationRequestResource extends Resource
                         TextEntry::make('month_track')
                             ->label('المسار')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthTrackInfo($get, $record)),
+                        TextEntry::make('user_gpa')
+                            ->label('المعدل')
+                            ->state(function (Get $get, ?FacilityRegistrationRequest $record): string {
+                                $user = static::resolveFormUser($get, $record);
+
+                                return $user?->gpa ?? '-';
+                            }),
                         TextEntry::make('month_specialization')
                             ->label('التخصص')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthSpecializationInfo($get, $record)),
@@ -312,28 +319,103 @@ class FacilityRegistrationRequestResource extends Resource
 
         $track = $user->track;
         $trackSpecializations = $track->trackSpecializations;
-        $scheduleMonths = static::getScheduleMonths($trackSpecializations, $track->elective_months ?? []);
+        $electiveMonths = $track->elective_months ?? [];
         $blockedMonths = static::getBlockedMonthsForUser($user, $trackSpecializations, $record?->id);
 
-        $availableMonths = [];
+        // Build a map of start months with their ranges
+        $monthRanges = [];
 
-        foreach ($scheduleMonths as $monthIndex) {
-            if (in_array($monthIndex, $blockedMonths, true)) {
+        // Process track specializations
+        foreach ($trackSpecializations as $trackSpecialization) {
+            $startMonth = (int) $trackSpecialization->month_index;
+            $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            if (! in_array($startMonth, $blockedMonths, true)) {
+                $monthRanges[$startMonth] = [
+                    'start' => $startMonth,
+                    'end' => $endMonth,
+                    'duration' => $durationMonths,
+                ];
+            }
+        }
+
+        // Process elective months
+        foreach ($electiveMonths as $month) {
+            $month = (int) $month;
+
+            if ($month < 1 || $month > 12) {
                 continue;
             }
 
-            $availableMonths[] = (int) $monthIndex;
-        }
+            if (in_array($month, $blockedMonths, true)) {
+                continue;
+            }
 
-        if ($record?->month_index) {
-            $recordMonth = (int) $record->month_index;
+            // Check if this month is already covered by a track specialization
+            $isCovered = false;
 
-            if (! in_array($recordMonth, $availableMonths, true)) {
-                $availableMonths[] = $recordMonth;
+            foreach ($monthRanges as $range) {
+                if ($month >= $range['start'] && $month <= $range['end']) {
+                    $isCovered = true;
+                    break;
+                }
+            }
+
+            if (! $isCovered) {
+                $monthRanges[$month] = [
+                    'start' => $month,
+                    'end' => $month,
+                    'duration' => 1,
+                ];
             }
         }
 
-        return Month::optionsFor($availableMonths);
+        // Add record month if it's not in the available months
+        if ($record?->month_index) {
+            $recordMonth = (int) $record->month_index;
+
+            if (! isset($monthRanges[$recordMonth])) {
+                // Find the range for this record month
+                $trackSpecialization = static::findTrackSpecializationForMonth($trackSpecializations, $recordMonth);
+
+                if ($trackSpecialization) {
+                    $startMonth = (int) $trackSpecialization->month_index;
+                    $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
+                    $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+                    $monthRanges[$recordMonth] = [
+                        'start' => $recordMonth,
+                        'end' => $endMonth,
+                        'duration' => $durationMonths,
+                    ];
+                } elseif (in_array($recordMonth, $electiveMonths, true)) {
+                    $monthRanges[$recordMonth] = [
+                        'start' => $recordMonth,
+                        'end' => $recordMonth,
+                        'duration' => 1,
+                    ];
+                }
+            }
+        }
+
+        // Build options with range labels
+        $options = [];
+        $orderedMonths = Month::orderedMonths(array_keys($monthRanges));
+
+        foreach ($orderedMonths as $monthIndex) {
+            $range = $monthRanges[$monthIndex];
+
+            if ($range['duration'] === 1) {
+                $options[$monthIndex] = Month::labelFor($monthIndex);
+            } else {
+                $startLabel = Month::labelFor($range['start']);
+                $endLabel = Month::labelFor($range['end']);
+                $options[$monthIndex] = "{$startLabel} - {$endLabel}";
+            }
+        }
+
+        return $options;
     }
 
     /**
