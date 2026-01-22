@@ -3,11 +3,18 @@
 namespace App\Filament\Resources\FacilityRegistrationRequestResource\Pages;
 
 use App\Filament\Resources\FacilityRegistrationRequestResource;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateFacilityRegistrationRequest extends CreateRecord
 {
     protected static string $resource = FacilityRegistrationRequestResource::class;
+
+    protected function getCreateAnotherFormAction(): Action
+    {
+        return parent::getCreateAnotherFormAction()
+            ->label('Save & create next');
+    }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {

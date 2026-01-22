@@ -86,20 +86,6 @@ class FacilityRegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
-                Fieldset::make('Student information')
-                    ->schema([
-                        TextEntry::make('user_name')
-                            ->label('Name')
-                            ->state(auth()->user()->name),
-                        TextEntry::make('user_track')
-                            ->label('Track')
-                            ->state(auth()->user()->track?->name ?? 'Unassigned'),
-                        TextEntry::make('user_gpa')
-                            ->label('GPA')
-                            ->state(auth()->user()->gpa),
-                    ])
-                    ->visible(fn () => ! auth()->user()->hasRole('admin'))
-                    ->columnSpanFull(),
                 Select::make('user_id')
                     ->label('Student')
                     ->relationship('user', 'name')
@@ -125,7 +111,7 @@ class FacilityRegistrationRequestResource extends Resource
                             ->label('Track')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthTrackInfo($get, $record)),
                         TextEntry::make('user_gpa')
-                            ->label('المعدل')
+                            ->label('GPA')
                             ->state(function (Get $get, ?FacilityRegistrationRequest $record): string {
                                 $user = static::resolveFormUser($get, $record);
 
@@ -169,8 +155,8 @@ class FacilityRegistrationRequestResource extends Resource
                     ->label('Assigned facility')
                     ->placeholder('Not assigned'),
                 TextColumn::make('assignedSpecialization.name')
-                    ->label('التخصص المعين')
-                    ->placeholder('لم يتم التعيين'),
+                    ->label('Assigned specialization')
+                    ->placeholder('Not assigned'),
                 TextColumn::make('wishes_count')
                     ->label('Wishes count')
                     ->counts('wishes'),
