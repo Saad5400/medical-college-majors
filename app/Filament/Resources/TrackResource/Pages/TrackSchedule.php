@@ -46,8 +46,21 @@ class TrackSchedule extends Page
 
     private function buildSchedule(): void
     {
+        $user = auth()->user();
+
         $tracks = Track::query()
             ->with(['trackSpecializations.specialization'])
+            ->when(! $user?->hasRole('admin'), function ($query) use ($user) {
+                $query->where(function ($q) use ($user) {
+                    // Always show normal (non-leader-only) tracks
+                    $q->where('is_leader_only', false);
+
+                    // If user is a leader with an assigned track, also show their track
+                    if ($user?->hasRole('leader') && $user?->track_id) {
+                        $q->orWhere('id', $user->track_id);
+                    }
+                });
+            })
             ->orderBy('sort')
             ->orderBy('id')
             ->get();
