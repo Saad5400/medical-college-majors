@@ -23,11 +23,11 @@ class FacilitySeatsRelationManager extends RelationManager
 {
     protected static string $relationship = 'facilitySeats';
 
-    protected static ?string $title = 'المقاعد المتاحة';
+    protected static ?string $title = 'Available seats';
 
-    protected static ?string $pluralModelLabel = 'المقاعد';
+    protected static ?string $pluralModelLabel = 'Seats';
 
-    protected static ?string $modelLabel = 'مقعد';
+    protected static ?string $modelLabel = 'Seat';
 
     public function table(Table $table): Table
     {
@@ -35,7 +35,7 @@ class FacilitySeatsRelationManager extends RelationManager
             ->recordTitleAttribute('specialization.name')
             ->columns([
                 TextColumn::make('month_index')
-                    ->label('الشهر')
+                    ->label('Month')
                     ->sortable()
                     ->formatStateUsing(fn (int $state): string => Month::labelFor($state))
                     ->searchable(
@@ -56,16 +56,16 @@ class FacilitySeatsRelationManager extends RelationManager
                     ),
                 TextColumn::make('specialization.name')
                     ->sortable()
-                    ->label('التخصص')
+                    ->label('Specialization')
                     ->searchable(),
                 TextColumn::make('max_seats')
-                    ->label('الحد الأقصى للمقاعد')
+                    ->label('Max seats')
                     ->sortable(),
             ])
             ->defaultSort('month_index')
             ->filters([
                 SelectFilter::make('specialization_id')
-                    ->label('التخصص')
+                    ->label('Specialization')
                     ->searchable()
                     ->preload()
                     ->options(fn (): array => Specialization::query()
@@ -74,7 +74,7 @@ class FacilitySeatsRelationManager extends RelationManager
                         ->pluck('name', 'id')
                         ->all()),
                 SelectFilter::make('month_index')
-                    ->label('الشهر')
+                    ->label('Month')
                     ->searchable()
                     ->options(Month::options()),
             ])
@@ -82,7 +82,7 @@ class FacilitySeatsRelationManager extends RelationManager
                 CreateAction::make()
                     ->form($this->getFormSchema()),
                 Action::make('createForAllMonths')
-                    ->label('إضافة مقعد لكل الشهور')
+                    ->label('Add seat for all months')
                     ->form($this->getBulkCreateFormSchema())
                     ->action(function (array $data): void {
                         $createdCount = $this->createSeatsForAllMonths(
@@ -92,7 +92,7 @@ class FacilitySeatsRelationManager extends RelationManager
 
                         if ($createdCount === 0) {
                             Notification::make()
-                                ->title('لا توجد أشهر متاحة لهذا التخصص.')
+                                ->title('No available months for this specialization.')
                                 ->warning()
                                 ->send();
 
@@ -100,19 +100,19 @@ class FacilitySeatsRelationManager extends RelationManager
                         }
 
                         Notification::make()
-                            ->title("تمت إضافة المقاعد لعدد {$createdCount} شهرًا.")
+                            ->title("Seats added for {$createdCount} month(s).")
                             ->success()
                             ->send();
                     }),
                 Action::make('createForAllSpecializations')
-                    ->label('إضافة مقعد لكل الشهور ولكل التخصصات')
+                    ->label('Add seat for all specializations/months')
                     ->form($this->getBulkCreateAllSpecializationsFormSchema())
                     ->action(function (array $data): void {
                         $createdCount = $this->createSeatsForAllSpecializations((int) $data['max_seats']);
 
                         if ($createdCount === 0) {
                             Notification::make()
-                                ->title('لا توجد أشهر متاحة للتخصصات المحددة.')
+                                ->title('No available months for the selected specializations.')
                                 ->warning()
                                 ->send();
 
@@ -120,7 +120,7 @@ class FacilitySeatsRelationManager extends RelationManager
                         }
 
                         Notification::make()
-                            ->title("تمت إضافة المقاعد لعدد {$createdCount} شهرًا.")
+                            ->title("Seats added for {$createdCount} month(s).")
                             ->success()
                             ->send();
                     }),
@@ -145,7 +145,7 @@ class FacilitySeatsRelationManager extends RelationManager
     {
         return [
             Select::make('specialization_id')
-                ->label('التخصص')
+                ->label('Specialization')
                 ->searchable()
                 ->preload()
                 ->live()
@@ -155,7 +155,7 @@ class FacilitySeatsRelationManager extends RelationManager
                 ))
                 ->required(),
             Select::make('month_index')
-                ->label('الشهر')
+                ->label('Month')
                 ->searchable()
                 ->preload()
                 ->live()
@@ -165,7 +165,7 @@ class FacilitySeatsRelationManager extends RelationManager
                 ))
                 ->required(),
             TextInput::make('max_seats')
-                ->label('الحد الأقصى للمقاعد')
+                ->label('Max seats')
                 ->required()
                 ->integer()
                 ->minValue(0),
@@ -179,13 +179,13 @@ class FacilitySeatsRelationManager extends RelationManager
     {
         return [
             Select::make('specialization_id')
-                ->label('التخصص')
+                ->label('Specialization')
                 ->searchable()
                 ->preload()
                 ->options(fn (): array => $this->getAvailableSpecializationOptions(null))
                 ->required(),
             TextInput::make('max_seats')
-                ->label('الحد الأقصى للمقاعد')
+                ->label('Max seats')
                 ->required()
                 ->integer()
                 ->minValue(0),
@@ -199,7 +199,7 @@ class FacilitySeatsRelationManager extends RelationManager
     {
         return [
             TextInput::make('max_seats')
-                ->label('الحد الأقصى للمقاعد')
+                ->label('Max seats')
                 ->required()
                 ->integer()
                 ->minValue(0),

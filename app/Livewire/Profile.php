@@ -40,7 +40,7 @@ class Profile extends Component implements HasActions, HasForms
                     ->maxLength(255)
                     ->autofocus(),
                 TextInput::make('gpa')
-                    ->label('المعدل التراكمي')
+                    ->label('Cumulative GPA')
                     ->placeholder('0.00')
                     ->required()
                     ->numeric()
@@ -48,7 +48,7 @@ class Profile extends Component implements HasActions, HasForms
                     ->maxValue(4)
                     ->live(onBlur: true),
                 TextInput::make('student_id')
-                    ->label('الرقم الجامعي')
+                    ->label('Student ID')
                     ->placeholder('0000000000')
                     ->required()
                     ->live(onBlur: true)

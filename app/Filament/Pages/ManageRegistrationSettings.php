@@ -12,11 +12,11 @@ class ManageRegistrationSettings extends SettingsPage
 
     protected static string $settings = RegistrationSettings::class;
 
-    protected static ?string $title = 'إعدادات التسجيل';
+    protected static ?string $title = 'Registration Settings';
 
-    protected static ?string $navigationLabel = 'إعدادات التسجيل';
+    protected static ?string $navigationLabel = 'Registration Settings';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function canAccess(): bool
     {
@@ -28,11 +28,11 @@ class ManageRegistrationSettings extends SettingsPage
         return $schema
             ->schema([
                 Toggle::make('track_registration_open')
-                    ->label('تسجيل المسارات مفتوح')
-                    ->helperText('السماح للطلاب بتقديم طلبات التسجيل في المسارات'),
+                    ->label('Track registration open')
+                    ->helperText('Allow students to submit track registration requests'),
                 Toggle::make('facility_registration_open')
-                    ->label('تسجيل المنشآت مفتوح')
-                    ->helperText('السماح للطلاب بتقديم طلبات التسجيل في المنشآت'),
+                    ->label('Facility registration open')
+                    ->helperText('Allow students to submit facility registration requests'),
             ]);
     }
 }

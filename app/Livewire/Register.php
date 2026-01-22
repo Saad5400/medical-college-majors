@@ -74,7 +74,7 @@ class Register extends \Filament\Auth\Pages\Register
     protected function getGpaFormComponent(): Component
     {
         return TextInput::make('gpa')
-            ->label('المعدل التراكمي')
+            ->label('Cumulative GPA')
             ->placeholder('0.00')
             ->required()
             ->numeric()
@@ -86,7 +86,7 @@ class Register extends \Filament\Auth\Pages\Register
     protected function getStudentIdFormComponent(): Component
     {
         return TextInput::make('student_id')
-            ->label('الرقم الجامعي')
+            ->label('Student ID')
             ->placeholder('0000000000')
             ->required()
             ->live(onBlur: true)

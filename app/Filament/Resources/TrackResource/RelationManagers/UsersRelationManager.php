@@ -16,11 +16,11 @@ class UsersRelationManager extends RelationManager
 {
     protected static string $relationship = 'users';
 
-    protected static ?string $title = 'الطلاب';
+    protected static ?string $title = 'Students';
 
-    protected static ?string $pluralModelLabel = 'الطلاب';
+    protected static ?string $pluralModelLabel = 'Students';
 
-    protected static ?string $modelLabel = 'طالب';
+    protected static ?string $modelLabel = 'Student';
 
     public function table(Table $table): Table
     {
@@ -28,16 +28,16 @@ class UsersRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('name')
-                    ->label('الطالب')
+                    ->label('Name')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
+                    ->label('Email')
                     ->searchable(),
                 TextColumn::make('student_id')
-                    ->label('الرقم الجامعي')
+                    ->label('Student ID')
                     ->searchable(),
                 TextColumn::make('gpa')
-                    ->label('المعدل')
+                    ->label('GPA')
                     ->sortable(),
             ])
             ->filters([
@@ -48,7 +48,7 @@ class UsersRelationManager extends RelationManager
                     ->preloadRecordSelect()
                     ->recordSelect(function (Select $select): Select {
                         return $select
-                            ->label('الطالب')
+                            ->label('Student')
                             ->hiddenLabel(false)
                             ->options(fn (Select $component): array => $this->getAssignableStudentOptions(
                                 $component->getOptionsLimit(),
