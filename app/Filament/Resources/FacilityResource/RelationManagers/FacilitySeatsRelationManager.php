@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class FacilitySeatsRelationManager extends RelationManager
@@ -62,6 +63,21 @@ class FacilitySeatsRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->defaultSort('month_index')
+            ->filters([
+                SelectFilter::make('specialization_id')
+                    ->label('التخصص')
+                    ->searchable()
+                    ->preload()
+                    ->options(fn (): array => Specialization::query()
+                        ->where('facility_type', $this->getOwnerRecord()->type)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->all()),
+                SelectFilter::make('month_index')
+                    ->label('الشهر')
+                    ->searchable()
+                    ->options(Month::options()),
+            ])
             ->headerActions([
                 CreateAction::make()
                     ->form($this->getFormSchema()),
