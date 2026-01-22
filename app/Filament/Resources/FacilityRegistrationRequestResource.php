@@ -231,10 +231,9 @@ class FacilityRegistrationRequestResource extends Resource
                                 $set('specialization_id', null);
                             }
                         })
-                        ->options(fn (Get $get, Select $component, ?FacilityRegistrationRequest $record): array => static::getAvailableFacilityOptions(
+                        ->options(fn (Get $get, Select $component): array => static::getAvailableFacilityOptions(
                             $get,
                             $component,
-                            $record,
                         ))
                         ->searchable()
                         ->preload()
@@ -246,23 +245,21 @@ class FacilityRegistrationRequestResource extends Resource
                     Select::make('specialization_id')
                         ->label('التخصص (للأشهر الاختيارية)')
                         ->live()
-                        ->options(fn (Get $get, ?FacilityRegistrationRequest $record): array => static::getElectiveSpecializationOptions(
+                        ->options(fn (Get $get): array => static::getElectiveSpecializationOptions(
                             $get,
-                            $record,
                         ))
                         ->searchable()
                         ->preload()
-                        ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
+                        ->visible(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
-                            $record,
-                        ))
-                        ->disabled(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
+                        ) && ! $get('is_custom'))
+                        ->disabled(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
-                            $record,
                         ) && ! $get('facility_id') && ! $get('is_custom')),
                     TextInput::make('custom_specialization_name')
                         ->label('اسم التخصص المخصص')
-                        ->visible(fn (Get $get) => $get('is_custom')),
+                        ->visible(fn (Get $get) => $get('is_custom'))
+                        ->required(fn (Get $get) => $get('is_custom')),
                     Hidden::make('is_competitive')
                         ->default(true),
                 ]),
@@ -325,10 +322,9 @@ class FacilityRegistrationRequestResource extends Resource
     private static function getAvailableFacilityOptions(
         Get $get,
         Select $component,
-        ?FacilityRegistrationRequest $record = null,
     ): array {
-        $monthIndex = static::resolveWishMonthIndex($get, $record);
-        $isElective = static::isElectiveMonth($get, $record);
+        $monthIndex = static::resolveWishMonthIndex($get);
+        $isElective = static::isElectiveMonth($get);
 
         if (! $monthIndex) {
             return [];
@@ -336,7 +332,7 @@ class FacilityRegistrationRequestResource extends Resource
 
         $specializationId = $isElective
             ? $get('specialization_id')
-            : static::resolveSpecializationIdForWish($get, $record);
+            : static::resolveSpecializationIdForWish($get);
 
         if (! $isElective && ! $specializationId) {
             return [];
@@ -375,9 +371,9 @@ class FacilityRegistrationRequestResource extends Resource
     /**
      * @return array<int, string>
      */
-    private static function getElectiveSpecializationOptions(Get $get, ?FacilityRegistrationRequest $record = null): array
+    private static function getElectiveSpecializationOptions(Get $get): array
     {
-        $monthIndex = static::resolveWishMonthIndex($get, $record);
+        $monthIndex = static::resolveWishMonthIndex($get);
 
         if (! $monthIndex) {
             return [];
@@ -399,15 +395,15 @@ class FacilityRegistrationRequestResource extends Resource
             ->all();
     }
 
-    private static function isElectiveMonth(Get $get, ?FacilityRegistrationRequest $record = null): bool
+    private static function isElectiveMonth(Get $get): bool
     {
-        $monthIndex = static::resolveWishMonthIndex($get, $record);
+        $monthIndex = static::resolveWishMonthIndex($get);
 
         if (! $monthIndex) {
             return false;
         }
 
-        $track = static::resolveFormUser($get, $record)?->track;
+        $track = static::resolveFormUser($get)?->track;
         $electiveMonths = $track?->elective_months ?? [];
 
         return in_array($monthIndex, $electiveMonths, true);
@@ -450,9 +446,9 @@ class FacilityRegistrationRequestResource extends Resource
         return (int) $monthIndex;
     }
 
-    private static function resolveWishMonthIndex(Get $get, ?FacilityRegistrationRequest $record = null): ?int
+    private static function resolveWishMonthIndex(Get $get): ?int
     {
-        $monthIndex = $get('../../month_index') ?? $record?->month_index;
+        $monthIndex = $get('../../month_index');
 
         if (! $monthIndex) {
             return null;
@@ -461,21 +457,21 @@ class FacilityRegistrationRequestResource extends Resource
         return (int) $monthIndex;
     }
 
-    private static function resolveSpecializationIdForWish(Get $get, ?FacilityRegistrationRequest $record = null): ?int
+    private static function resolveSpecializationIdForWish(Get $get): ?int
     {
-        $monthIndex = static::resolveWishMonthIndex($get, $record);
+        $monthIndex = static::resolveWishMonthIndex($get);
 
         if (! $monthIndex) {
             return null;
         }
 
-        $user = static::resolveFormUser($get, $record);
+        $user = static::resolveFormUser($get);
 
         if (! $user || ! $user->track) {
             return null;
         }
 
-        if (static::isElectiveMonth($get, $record)) {
+        if (static::isElectiveMonth($get)) {
             return $get('specialization_id');
         }
 
