@@ -36,7 +36,7 @@ class TrackSchedule extends Page
      */
     public static function canAccess(array $parameters = []): bool
     {
-        return auth()->user()?->can('viewAny', Track::class) ?? false;
+        return auth()->check();
     }
 
     public function mount(): void
@@ -46,8 +46,21 @@ class TrackSchedule extends Page
 
     private function buildSchedule(): void
     {
+        $user = auth()->user();
+
         $tracks = Track::query()
             ->with(['trackSpecializations.specialization'])
+            ->when(! $user?->hasRole('admin') && ! $user?->hasRole('data-entry'), function ($query) use ($user) {
+                $query->where(function ($q) use ($user) {
+                    // Always show normal (non-leader-only) tracks
+                    $q->where('is_leader_only', false);
+
+                    // If user is a leader with an assigned track, also show their track
+                    if ($user?->hasRole('leader') && $user?->track_id) {
+                        $q->orWhere('id', $user->track_id);
+                    }
+                });
+            })
             ->orderBy('sort')
             ->orderBy('id')
             ->get();
