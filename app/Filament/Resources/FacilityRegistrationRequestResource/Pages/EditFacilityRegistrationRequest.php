@@ -32,7 +32,6 @@ class EditFacilityRegistrationRequest extends EditRecord
                 'custom_facility_name' => null,
                 'custom_specialization_name' => null,
                 'is_custom' => false,
-                'is_competitive' => true,
             ];
         }
 
@@ -60,30 +59,5 @@ class EditFacilityRegistrationRequest extends EditRecord
         }
 
         return $data;
-    }
-
-    protected function afterSave(): void
-    {
-        // Process wishes and update is_competitive flag
-        $this->updateWishCompetitiveness();
-    }
-
-    protected function updateWishCompetitiveness(): void
-    {
-        $wishes = $this->record->wishes()->orderBy('priority')->get();
-        $foundCustom = false;
-
-        foreach ($wishes as $wish) {
-            if ($foundCustom) {
-                // All wishes after a custom one are non-competitive
-                $wish->update(['is_competitive' => false]);
-            } elseif ($wish->is_custom) {
-                $foundCustom = true;
-                $wish->update(['is_competitive' => false]);
-            } else {
-                // Reset to competitive if not custom and not after custom
-                $wish->update(['is_competitive' => true]);
-            }
-        }
     }
 }

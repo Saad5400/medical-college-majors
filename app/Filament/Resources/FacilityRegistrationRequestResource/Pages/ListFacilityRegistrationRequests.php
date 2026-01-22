@@ -7,12 +7,12 @@ use App\Filament\Resources\FacilityRegistrationRequestResource;
 use App\Models\FacilityRegistrationRequest;
 use App\Models\FacilitySeat;
 use App\Models\User;
-use App\Settings\RegistrationSettings;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\DB;
 
 class ListFacilityRegistrationRequests extends ListRecords
 {
@@ -24,8 +24,7 @@ class ListFacilityRegistrationRequests extends ListRecords
             CreateAction::make(),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المنشآت')
-                // TODO: UNCOMMENT THIS BACK AFTER TESTING
-                // ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->facility_registration_open)
+                ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->form([
                     Select::make('month_index')
                         ->searchable()
@@ -37,47 +36,74 @@ class ListFacilityRegistrationRequests extends ListRecords
                 ->action(function (array $data) {
                     $monthIndex = $data['month_index'];
 
-                    // Reset all assigned facilities for this month
-                    FacilityRegistrationRequest::where('month_index', $monthIndex)
-                        ->update(['assigned_facility_id' => null]);
+                    $monthLabel = DB::transaction(function () use ($monthIndex): string {
+                        // Reset all assigned facilities for this month
+                        FacilityRegistrationRequest::where('month_index', $monthIndex)
+                            ->update([
+                                'assigned_facility_id' => null,
+                                'assigned_specialization_id' => null,
+                            ]);
 
-                    // Get all requests for this month with competitive wishes
-                    // Order by user GPA (descending)
-                    $requests = FacilityRegistrationRequest::where('month_index', $monthIndex)
-                        ->with(['user', 'competitiveWishes.facility'])
-                        ->get()
-                        ->sortByDesc(fn($request) => $request->user->gpa);
+                        // Get all requests for this month with competitive wishes
+                        // Order by user GPA (descending)
+                        $requests = FacilityRegistrationRequest::where('month_index', $monthIndex)
+                            ->with(['user.track.trackSpecializations.specialization', 'wishes.facility'])
+                            ->orderByDesc(User::select('gpa')
+                                ->whereColumn('users.id', 'facility_registration_requests.user_id'))
+                            ->orderBy('facility_registration_requests.created_at')
+                            ->orderBy('facility_registration_requests.id')
+                            ->lockForUpdate()
+                            ->get();
 
-                    // Get facility capacities for this month
-                    $facilityCapacities = FacilitySeat::where('month_index', $monthIndex)
-                        ->pluck('max_seats', 'facility_id')
-                        ->toArray();
+                        // Get facility capacities for this month
+                        $facilityCapacities = FacilitySeat::where('month_index', $monthIndex)
+                            ->lockForUpdate()
+                            ->get(['facility_id', 'specialization_id', 'max_seats'])
+                            ->mapWithKeys(function (FacilitySeat $seat): array {
+                                return [
+                                    static::buildCapacityKey($seat->facility_id, $seat->specialization_id) => $seat->max_seats,
+                                ];
+                            })
+                            ->toArray();
 
-                    $facilityCurrentCounts = [];
+                        $facilityCurrentCounts = [];
 
-                    foreach ($requests as $request) {
-                        $wishes = $request->competitiveWishes;
+                        foreach ($requests as $request) {
+                            $wishes = $request->competitiveWishes;
 
-                        foreach ($wishes as $wish) {
-                            if (!$wish->facility_id) {
-                                continue;
-                            }
+                            foreach ($wishes as $wish) {
+                                if (! $wish->facility_id) {
+                                    continue;
+                                }
 
-                            $facilityId = $wish->facility_id;
-                            $currentCount = $facilityCurrentCounts[$facilityId] ?? 0;
-                            $maxCapacity = $facilityCapacities[$facilityId] ?? 0;
+                                $facilityId = $wish->facility_id;
+                                $specializationId = static::resolveSpecializationIdForWish(
+                                    $request,
+                                    $monthIndex,
+                                    $wish->specialization_id,
+                                );
 
-                            if ($currentCount < $maxCapacity) {
-                                $request->assigned_facility_id = $facilityId;
-                                $request->save();
-                                $facilityCurrentCounts[$facilityId] = $currentCount + 1;
+                                if (! $specializationId) {
+                                    continue;
+                                }
 
-                                break;
+                                $capacityKey = static::buildCapacityKey($facilityId, $specializationId);
+                                $currentCount = $facilityCurrentCounts[$capacityKey] ?? 0;
+                                $maxCapacity = $facilityCapacities[$capacityKey] ?? 0;
+
+                                if ($currentCount < $maxCapacity) {
+                                    $request->assigned_facility_id = $facilityId;
+                                    $request->assigned_specialization_id = $specializationId;
+                                    $request->save();
+                                    $facilityCurrentCounts[$capacityKey] = $currentCount + 1;
+
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    $monthLabel = Month::labelFor($monthIndex);
+                        return Month::labelFor($monthIndex);
+                    });
 
                     Notification::make()
                         ->title("تم توزيع الطلاب على المنشآت لشهر {$monthLabel}")
@@ -87,5 +113,38 @@ class ListFacilityRegistrationRequests extends ListRecords
                 ->icon('heroicon-o-arrows-right-left')
                 ->color('primary'),
         ];
+    }
+
+    private static function buildCapacityKey(int $facilityId, int $specializationId): string
+    {
+        return "{$facilityId}:{$specializationId}";
+    }
+
+    private static function resolveSpecializationIdForWish(
+        FacilityRegistrationRequest $request,
+        int $monthIndex,
+        ?int $wishSpecializationId,
+    ): ?int {
+        if ($wishSpecializationId) {
+            return $wishSpecializationId;
+        }
+
+        $trackSpecializations = $request->user?->track?->trackSpecializations;
+
+        if (! $trackSpecializations) {
+            return null;
+        }
+
+        foreach ($trackSpecializations as $trackSpecialization) {
+            $durationMonths = max(1, (int) $trackSpecialization->specialization?->duration_months);
+            $startMonth = (int) $trackSpecialization->month_index;
+            $endMonth = min(12, $startMonth + $durationMonths - 1);
+
+            if ($monthIndex >= $startMonth && $monthIndex <= $endMonth) {
+                return $trackSpecialization->specialization_id;
+            }
+        }
+
+        return null;
     }
 }

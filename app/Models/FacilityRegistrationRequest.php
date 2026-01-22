@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class FacilityRegistrationRequest extends Model
 {
-    use LogsActivity, HasFactory;
+    use HasFactory, LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -22,6 +23,7 @@ class FacilityRegistrationRequest extends Model
         'user_id',
         'month_index',
         'assigned_facility_id',
+        'assigned_specialization_id',
     ];
 
     protected function casts(): array
@@ -41,15 +43,35 @@ class FacilityRegistrationRequest extends Model
         return $this->belongsTo(Facility::class, 'assigned_facility_id');
     }
 
+    public function assignedSpecialization(): BelongsTo
+    {
+        return $this->belongsTo(Specialization::class, 'assigned_specialization_id');
+    }
+
     public function wishes(): HasMany
     {
         return $this->hasMany(FacilityWish::class)->orderBy('priority');
     }
 
-    public function competitiveWishes(): HasMany
+    /**
+     * @return Collection<int, FacilityWish>
+     */
+    public function getCompetitiveWishesAttribute(): Collection
     {
-        return $this->hasMany(FacilityWish::class)
-            ->where('is_competitive', true)
-            ->orderBy('priority');
+        $wishes = $this->relationLoaded('wishes')
+            ? $this->wishes
+            : $this->wishes()->get();
+
+        $competitiveWishes = collect();
+
+        foreach ($wishes->sortBy('priority') as $wish) {
+            if ($wish->is_custom) {
+                break;
+            }
+
+            $competitiveWishes->push($wish);
+        }
+
+        return $competitiveWishes->values();
     }
 }

@@ -171,7 +171,7 @@ The system uses a **GPA-based preference matching algorithm**:
 1. Reset all student track assignments to NULL
 2. Load all students ordered by:
    - GPA (descending - highest first)
-   - Registration request creation time (ascending - earliest first, as tie-breaker)
+   - Latest registration request timestamp (ascending - earliest latest request first, as tie-breaker)
 3. For each student (starting with highest GPA):
    a. Get their ranked track preferences (1st choice, 2nd choice, etc.)
    b. For each preference in order:

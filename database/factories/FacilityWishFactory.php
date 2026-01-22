@@ -30,7 +30,6 @@ class FacilityWishFactory extends Factory
             'custom_facility_name' => null,
             'custom_specialization_name' => null,
             'is_custom' => false,
-            'is_competitive' => true,
         ];
     }
 
@@ -42,7 +41,6 @@ class FacilityWishFactory extends Factory
             'custom_facility_name' => fake()->company(),
             'custom_specialization_name' => fake()->jobTitle(),
             'is_custom' => true,
-            'is_competitive' => false,
         ]);
     }
 }

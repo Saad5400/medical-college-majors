@@ -275,7 +275,6 @@ class TestDataSeeder extends Seeder
                 'custom_facility_name' => null,
                 'custom_specialization_name' => null,
                 'is_custom' => false,
-                'is_competitive' => true,
             ]);
         }
     }

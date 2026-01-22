@@ -86,20 +86,6 @@ class FacilityRegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
-                Fieldset::make('بيانات الطالب')
-                    ->schema([
-                        TextEntry::make('user_name')
-                            ->label('الاسم')
-                            ->state(auth()->user()->name),
-                        TextEntry::make('user_track')
-                            ->label('المسار')
-                            ->state(auth()->user()->track?->name ?? 'غير محدد'),
-                        TextEntry::make('user_gpa')
-                            ->label('المعدل')
-                            ->state(auth()->user()->gpa),
-                    ])
-                    ->visible(fn () => ! auth()->user()->hasRole('admin'))
-                    ->columnSpanFull(),
                 Select::make('user_id')
                     ->label('الطالب')
                     ->relationship('user', 'name')
@@ -119,7 +105,7 @@ class FacilityRegistrationRequestResource extends Resource
                     ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
                     ->required()
                     ->live(),
-                Fieldset::make('معلومات الشهر المحدد')
+                Fieldset::make('معلومات الطالب والشهر المحدد')
                     ->schema([
                         TextEntry::make('month_track')
                             ->label('المسار')
@@ -147,7 +133,7 @@ class FacilityRegistrationRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'assignedFacility', 'wishes']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'assignedFacility', 'assignedSpecialization', 'wishes']))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -167,6 +153,9 @@ class FacilityRegistrationRequestResource extends Resource
                     ->sortable(),
                 TextColumn::make('assignedFacility.name')
                     ->label('المنشأة المعينة')
+                    ->placeholder('لم يتم التعيين'),
+                TextColumn::make('assignedSpecialization.name')
+                    ->label('التخصص المعين')
                     ->placeholder('لم يتم التعيين'),
                 TextColumn::make('wishes_count')
                     ->label('عدد الرغبات')
@@ -237,14 +226,7 @@ class FacilityRegistrationRequestResource extends Resource
                     Toggle::make('is_custom')
                         ->label('منشأة مخصصة')
                         ->helperText('اختر منشأة غير مسجلة في النظام (لن تدخل في المنافسة)')
-                        ->live()
-                        ->afterStateUpdated(function ($state, callable $set, Get $get) {
-                            if ($state) {
-                                $set('is_competitive', false);
-                                // Mark all subsequent wishes as non-competitive
-                                // This is handled in the model/controller
-                            }
-                        }),
+                        ->live(),
                     Select::make('specialization_id')
                         ->label('التخصص (للأشهر الاختيارية)')
                         ->live()
@@ -287,8 +269,6 @@ class FacilityRegistrationRequestResource extends Resource
                         ->label('اسم التخصص المخصص')
                         ->visible(fn (Get $get) => $get('is_custom'))
                         ->required(fn (Get $get) => $get('is_custom')),
-                    Hidden::make('is_competitive')
-                        ->default(true),
                 ]),
         ];
     }

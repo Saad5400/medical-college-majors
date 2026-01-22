@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Facility;
 use App\Models\FacilityRegistrationRequest;
+use App\Models\Specialization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,6 +26,7 @@ class FacilityRegistrationRequestFactory extends Factory
             'user_id' => User::factory(),
             'month_index' => fake()->numberBetween(1, 12),
             'assigned_facility_id' => null,
+            'assigned_specialization_id' => null,
         ];
     }
 
@@ -32,6 +34,7 @@ class FacilityRegistrationRequestFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'assigned_facility_id' => Facility::factory(),
+            'assigned_specialization_id' => Specialization::factory(),
         ]);
     }
 }

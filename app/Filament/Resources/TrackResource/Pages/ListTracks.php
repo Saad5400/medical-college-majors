@@ -7,12 +7,12 @@ use App\Filament\Resources\TrackResource;
 use App\Models\RegistrationRequest;
 use App\Models\Track;
 use App\Models\User;
-use App\Settings\RegistrationSettings;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\ExportAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\DB;
 
 class ListTracks extends ListRecords
 {
@@ -36,51 +36,59 @@ class ListTracks extends ListRecords
                 ->color('info'),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المسارات')
-                ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->track_registration_open)
+                ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->action(function () {
-                    // Reset all users' track_id
-                    User::query()->update(['track_id' => null]);
+                    DB::transaction(function () {
+                        $studentQuery = User::query()
+                            ->whereHas('roles', function ($query) {
+                                $query->where('name', 'student');
+                            });
 
-                    // Eager load registration requests with tracks to avoid N+1
-                    $users = User::query()
-                        ->with(['registrationRequests' => function ($query) {
-                            $query->latest()->with(['tracks' => function ($tracksQuery) {
-                                $tracksQuery->orderByPivot('sort');
-                            }]);
-                        }])
-                        ->addSelect(['latest_request_created_at' => RegistrationRequest::select('created_at')
-                            ->whereColumn('user_id', 'users.id')
-                            ->latest()
-                            ->limit(1),
-                        ])
-                        ->orderBy('gpa', 'desc')
-                        ->orderBy('latest_request_created_at', 'asc')
-                        ->get();
+                        // Reset only students' track_id
+                        $studentQuery->update(['track_id' => null]);
 
-                    // Pre-load tracks with their max_users
-                    $trackCapacities = Track::query()->pluck('max_users', 'id')->toArray();
-                    $trackCurrentCounts = [];
+                        // Eager load registration requests with tracks to avoid N+1
+                        $users = (clone $studentQuery)
+                            ->with(['registrationRequests' => function ($query) {
+                                $query->latest()->with(['tracks' => function ($tracksQuery) {
+                                    $tracksQuery->orderByPivot('sort');
+                                }]);
+                            }])
+                            ->addSelect(['latest_request_created_at' => RegistrationRequest::select('created_at')
+                                ->whereColumn('user_id', 'users.id')
+                                ->latest()
+                                ->limit(1),
+                            ])
+                            ->orderBy('gpa', 'desc')
+                            ->orderBy('latest_request_created_at', 'asc')
+                            ->lockForUpdate()
+                            ->get();
 
-                    /** @var User $user */
-                    foreach ($users as $user) {
-                        $registrationRequest = $user->registrationRequests->first();
-                        if (! $registrationRequest) {
-                            continue;
-                        }
+                        // Pre-load tracks with their max_users
+                        $trackCapacities = Track::query()->pluck('max_users', 'id')->toArray();
+                        $trackCurrentCounts = [];
 
-                        $tracks = $registrationRequest->tracks;
+                        /** @var User $user */
+                        foreach ($users as $user) {
+                            $registrationRequest = $user->registrationRequests->first();
+                            if (! $registrationRequest) {
+                                continue;
+                            }
 
-                        foreach ($tracks as $track) {
-                            $currentCount = $trackCurrentCounts[$track->id] ?? 0;
-                            if ($currentCount < $trackCapacities[$track->id]) {
-                                $user->track_id = $track->id;
-                                $user->save();
-                                $trackCurrentCounts[$track->id] = $currentCount + 1;
+                            $tracks = $registrationRequest->tracks;
 
-                                break;
+                            foreach ($tracks as $track) {
+                                $currentCount = $trackCurrentCounts[$track->id] ?? 0;
+                                if ($currentCount < $trackCapacities[$track->id]) {
+                                    $user->track_id = $track->id;
+                                    $user->save();
+                                    $trackCurrentCounts[$track->id] = $currentCount + 1;
+
+                                    break;
+                                }
                             }
                         }
-                    }
+                    });
 
                     Notification::make()
                         ->title('تم توزيع الطلاب على المسارات')

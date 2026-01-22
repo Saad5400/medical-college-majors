@@ -10,7 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class FacilityWish extends Model
 {
-    use LogsActivity, HasFactory;
+    use HasFactory, LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -25,7 +25,6 @@ class FacilityWish extends Model
         'custom_facility_name',
         'custom_specialization_name',
         'is_custom',
-        'is_competitive',
     ];
 
     protected function casts(): array
@@ -33,7 +32,6 @@ class FacilityWish extends Model
         return [
             'priority' => 'integer',
             'is_custom' => 'boolean',
-            'is_competitive' => 'boolean',
         ];
     }
 
