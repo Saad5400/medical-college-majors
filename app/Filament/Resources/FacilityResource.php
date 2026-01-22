@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\FacilityType;
 use App\Filament\Resources\FacilityResource\Pages\CreateFacility;
 use App\Filament\Resources\FacilityResource\Pages\EditFacility;
+use App\Filament\Resources\FacilityResource\Pages\FacilitySchedule;
 use App\Filament\Resources\FacilityResource\Pages\ListFacilities;
 use App\Filament\Resources\FacilityResource\RelationManagers\FacilitySeatsRelationManager;
 use App\Models\Facility;

@@ -238,8 +238,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ))
                         ->searchable()
                         ->preload()
-                        ->visible(fn (Get $get) => ! $get('is_custom'))
-                        ->required(fn (Get $get) => ! $get('is_custom')),
+                        ->visible(fn (Get $get) => ! $get('is_custom')),
                     TextInput::make('custom_facility_name')
                         ->label('اسم المنشأة المخصصة')
                         ->visible(fn (Get $get) => $get('is_custom'))
@@ -260,11 +259,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->disabled(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
                             $get,
                             $record,
-                        ) && ! $get('facility_id') && ! $get('is_custom'))
-                        ->required(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonth(
-                            $get,
-                            $record,
-                        ) && ! $get('is_custom')),
+                        ) && ! $get('facility_id') && ! $get('is_custom')),
                     TextInput::make('custom_specialization_name')
                         ->label('اسم التخصص المخصص')
                         ->visible(fn (Get $get) => $get('is_custom')),
@@ -361,6 +356,15 @@ class FacilityRegistrationRequestResource extends Resource
         $query = Facility::query()
             ->whereIn('id', $seatQuery->distinct());
 
+        // Filter facilities by type matching the specialization's facility_type
+        if ($specializationId) {
+            $specialization = Specialization::find($specializationId);
+
+            if ($specialization) {
+                $query->where('type', $specialization->facility_type);
+            }
+        }
+
         if ($selectedFacilityIds !== []) {
             $query->whereNotIn('id', $selectedFacilityIds);
         }
@@ -423,7 +427,8 @@ class FacilityRegistrationRequestResource extends Resource
             return $user;
         }
 
-        $userId = $get('user_id') ?? $record?->user_id;
+        // Try to get user_id from different contexts (root level or from within repeater)
+        $userId = $get('user_id') ?? $get('../../user_id') ?? $record?->user_id;
 
         if (! $userId) {
             return null;

@@ -36,7 +36,23 @@ class FacilitySeatsRelationManager extends RelationManager
                 TextColumn::make('month_index')
                     ->label('الشهر')
                     ->sortable()
-                    ->formatStateUsing(fn (int $state): string => Month::labelFor($state)),
+                    ->formatStateUsing(fn (int $state): string => Month::labelFor($state))
+                    ->searchable(
+                        query: function ($query, $search) {
+                            $monthIndexes = collect(Month::cases())
+                                ->filter(fn ($month) => str_contains(mb_strtolower(Month::labelFor($month->value)), mb_strtolower($search))
+                                )
+                                ->pluck('value')
+                                ->toArray();
+
+                            if (! empty($monthIndexes)) {
+                                $query->whereIn('month_index', $monthIndexes);
+                            } else {
+                                // Ensures no results if no matches found.
+                                $query->whereRaw('0 = 1');
+                            }
+                        },
+                    ),
                 TextColumn::make('specialization.name')
                     ->sortable()
                     ->label('التخصص')
