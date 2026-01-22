@@ -50,7 +50,7 @@ class TrackSchedule extends Page
 
         $tracks = Track::query()
             ->with(['trackSpecializations.specialization'])
-            ->when(! $user?->hasRole('admin'), function ($query) use ($user) {
+            ->when(! $user?->hasRole('admin') && ! $user?->hasRole('data-entry'), function ($query) use ($user) {
                 $query->where(function ($q) use ($user) {
                     // Always show normal (non-leader-only) tracks
                     $q->where('is_leader_only', false);
