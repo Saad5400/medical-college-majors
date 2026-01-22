@@ -125,6 +125,7 @@ class FacilitySeatsRelationManager extends RelationManager
                             ->send();
                     }),
             ])
+            ->deferFilters()
             ->recordActions([
                 EditAction::make()
                     ->form($this->getFormSchema()),

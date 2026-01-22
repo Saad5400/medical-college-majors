@@ -85,14 +85,14 @@ class TrackResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                // Count users per track - handle varchar track_id vs bigint id
+                // Count users per track
                 $usersCountSubquery = DB::table('users')
                     ->select('track_id', DB::raw('COUNT(*) as count'))
                     ->whereNotNull('track_id')
                     ->groupBy('track_id');
 
                 $query->leftJoinSub($usersCountSubquery, 'users_counts', function ($join) {
-                    $join->whereRaw('"tracks"."id"::text = "users_counts"."track_id"');
+                    $join->on('tracks.id', '=', 'users_counts.track_id');
                 });
 
                 // Pre-compute first choice counts using a single aggregated subquery

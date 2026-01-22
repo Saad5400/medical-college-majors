@@ -24,7 +24,8 @@ class ListFacilityRegistrationRequests extends ListRecords
             CreateAction::make(),
             Action::make('distribute')
                 ->label('توزيع الطلاب على المنشآت')
-                ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->facility_registration_open)
+                // TODO: UNCOMMENT THIS BACK AFTER TESTING
+                // ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->facility_registration_open)
                 ->form([
                     Select::make('month_index')
                         ->searchable()
@@ -45,7 +46,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                     $requests = FacilityRegistrationRequest::where('month_index', $monthIndex)
                         ->with(['user', 'competitiveWishes.facility'])
                         ->get()
-                        ->sortByDesc(fn ($request) => $request->user->gpa);
+                        ->sortByDesc(fn($request) => $request->user->gpa);
 
                     // Get facility capacities for this month
                     $facilityCapacities = FacilitySeat::where('month_index', $monthIndex)
@@ -58,7 +59,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                         $wishes = $request->competitiveWishes;
 
                         foreach ($wishes as $wish) {
-                            if (! $wish->facility_id) {
+                            if (!$wish->facility_id) {
                                 continue;
                             }
 

@@ -108,6 +108,7 @@ class FacilityResource extends Resource
                         }
                     }),
             ])
+            ->deferFilters()
             ->recordActions([
                 EditAction::make(),
             ])

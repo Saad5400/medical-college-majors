@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
@@ -124,9 +125,17 @@ class UserResource extends Resource
                 TextColumn::make('student_id')
                     ->label('رقم الطالب')
                     ->searchable(),
+                TextColumn::make('track.name')
+                    ->label('المسار')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('track')
+                    ->label('المسار')
+                    ->relationship('track', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
             ->recordActions([
                 EditAction::make(),
