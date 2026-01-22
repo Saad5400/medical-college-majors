@@ -21,6 +21,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ViewField;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Fieldset;
@@ -86,6 +87,10 @@ class FacilityRegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
+                ViewField::make('stepper')
+                    ->view('filament.resources.facility-registration-request-resource.forms.progress-stepper')
+                    ->columnSpanFull()
+                    ->visible(fn () => auth()->user()->hasRole('student') && auth()->user()->track_id),
                 Select::make('user_id')
                     ->label('Student')
                     ->relationship('user', 'name')
