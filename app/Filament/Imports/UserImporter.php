@@ -19,11 +19,11 @@ class UserImporter extends Importer
     {
         return [
             ImportColumn::make('name')
-                ->label('الاسم')
+                ->label('Name')
                 ->requiredMapping()
                 ->rules(['required', 'max:255']),
             ImportColumn::make('student_id')
-                ->label('الرقم الجامعي')
+                ->label('Student ID')
                 ->requiredMapping()
                 ->castStateUsing(function (string $state): string {
                     return static::normalizeStudentId($state);
@@ -31,11 +31,11 @@ class UserImporter extends Importer
                 ->rules(['required', 'string', 'regex:/^[0-9]+$/', 'min:5', 'max:20'])
                 ->example('430748574'),
             ImportColumn::make('phone_number')
-                ->label('رقم الهاتف')
+                ->label('Phone number')
                 ->rules(['nullable', 'max:255'])
                 ->example('0501234567'),
             ImportColumn::make('gpa')
-                ->label('المعدل (من 4)')
+                ->label('GPA (out of 4)')
                 ->requiredMapping()
                 ->castStateUsing(function (string $state): ?string {
                     return static::normalizeGpa($state);
@@ -99,14 +99,10 @@ class UserImporter extends Importer
             $studentId = substr($studentId, 1);
         }
 
-        // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
-        $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        // Convert Arabic-Indic numerals (Unicode 0660-0669) to Western numerals (0-9)
         $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        $studentId = str_replace($arabicNumerals, $westernNumerals, $studentId);
-
-        // Convert Eastern Arabic-Indic numerals (۰-۹) to Western numerals (0-9)
-        $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-        $studentId = str_replace($easternArabicNumerals, $westernNumerals, $studentId);
+        $studentId = str_replace(static::arabicIndicDigits(), $westernNumerals, $studentId);
+        $studentId = str_replace(static::easternArabicIndicDigits(), $westernNumerals, $studentId);
 
         // Remove any remaining non-numeric characters
         $studentId = preg_replace('/[^0-9]/', '', $studentId);
@@ -128,14 +124,10 @@ class UserImporter extends Importer
         // Remove whitespace
         $gpa = trim($gpa);
 
-        // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9)
-        $arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        // Convert Arabic-Indic numerals (Unicode 0660-0669) to Western numerals (0-9)
         $westernNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        $gpa = str_replace($arabicNumerals, $westernNumerals, $gpa);
-
-        // Convert Eastern Arabic-Indic numerals (۰-۹) to Western numerals (0-9)
-        $easternArabicNumerals = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-        $gpa = str_replace($easternArabicNumerals, $westernNumerals, $gpa);
+        $gpa = str_replace(static::arabicIndicDigits(), $westernNumerals, $gpa);
+        $gpa = str_replace(static::easternArabicIndicDigits(), $westernNumerals, $gpa);
 
         // Replace comma with period for decimal separator
         $gpa = str_replace(',', '.', $gpa);
@@ -146,18 +138,40 @@ class UserImporter extends Importer
         return $gpa;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private static function arabicIndicDigits(): array
+    {
+        return array_map(
+            fn (int $codepoint): string => mb_chr($codepoint, 'UTF-8'),
+            range(0x0660, 0x0669),
+        );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function easternArabicIndicDigits(): array
+    {
+        return array_map(
+            fn (int $codepoint): string => mb_chr($codepoint, 'UTF-8'),
+            range(0x06F0, 0x06F9),
+        );
+    }
+
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = '**نتائج الاستيراد:**'."\n\n";
-        $body .= '✅ تم استيراد '.Number::format($import->successful_rows).' طالب بنجاح.';
+        $body = '**Import results:**'."\n\n";
+        $body .= '✅ Successfully imported '.Number::format($import->successful_rows).' students.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= "\n\n".'❌ فشل استيراد '.Number::format($failedRowsCount).' صف.';
-            $body .= "\n\n".'**الأخطاء الشائعة:**'."\n";
-            $body .= '• تأكد من أن الرقم الجامعي يحتوي على أرقام فقط'."\n";
-            $body .= '• تأكد من أن المعدل بين 0 و 4'."\n";
-            $body .= '• تأكد من عدم تكرار الأرقام الجامعية'."\n";
-            $body .= "\n".'يمكنك تحميل تقرير الأخطاء من صفحة عمليات الاستيراد.';
+            $body .= "\n\n".'❌ Failed to import '.Number::format($failedRowsCount).' rows.';
+            $body .= "\n\n".'**Common issues:**'."\n";
+            $body .= '• Ensure the student ID contains numeric characters only'."\n";
+            $body .= '• Ensure the GPA is between 0 and 4'."\n";
+            $body .= '• Make sure student IDs are not duplicated'."\n";
+            $body .= "\n".'You can download the error report from the import operations page.';
         }
 
         return $body;

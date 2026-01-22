@@ -38,9 +38,9 @@ class FacilityRegistrationRequestResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
 
-    protected static ?string $modelLabel = 'طلب تسجيل منشأة';
+    protected static ?string $modelLabel = 'Facility registration request';
 
-    protected static ?string $pluralModelLabel = 'طلبات تسجيل المنشآت';
+    protected static ?string $pluralModelLabel = 'Facility registration requests';
 
     private const WISH_COUNT = 5;
 
@@ -86,22 +86,22 @@ class FacilityRegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
-                Fieldset::make('بيانات الطالب')
+                Fieldset::make('Student information')
                     ->schema([
                         TextEntry::make('user_name')
-                            ->label('الاسم')
+                            ->label('Name')
                             ->state(auth()->user()->name),
                         TextEntry::make('user_track')
-                            ->label('المسار')
-                            ->state(auth()->user()->track?->name ?? 'غير محدد'),
+                            ->label('Track')
+                            ->state(auth()->user()->track?->name ?? 'Unassigned'),
                         TextEntry::make('user_gpa')
-                            ->label('المعدل')
+                            ->label('GPA')
                             ->state(auth()->user()->gpa),
                     ])
                     ->visible(fn () => ! auth()->user()->hasRole('admin'))
                     ->columnSpanFull(),
                 Select::make('user_id')
-                    ->label('الطالب')
+                    ->label('Student')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
@@ -111,7 +111,7 @@ class FacilityRegistrationRequestResource extends Resource
                 Select::make('month_index')
                     ->searchable()
                     ->preload()
-                    ->label('الشهر')
+                    ->label('Month')
                     ->options(fn (Get $get, ?FacilityRegistrationRequest $record): array => static::getAvailableMonthOptions(
                         $get,
                         $record,
@@ -119,16 +119,16 @@ class FacilityRegistrationRequestResource extends Resource
                     ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
                     ->required()
                     ->live(),
-                Fieldset::make('معلومات الشهر المحدد')
+                Fieldset::make('Selected month overview')
                     ->schema([
                         TextEntry::make('month_track')
-                            ->label('المسار')
+                            ->label('Track')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthTrackInfo($get, $record)),
                         TextEntry::make('month_specialization')
-                            ->label('التخصص')
+                            ->label('Specialization')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthSpecializationInfo($get, $record)),
                         TextEntry::make('month_duration')
-                            ->label('المدة')
+                            ->label('Duration')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthDurationInfo($get, $record)),
                     ])
                     ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::resolveMonthIndex($get, $record) !== null)
@@ -143,32 +143,32 @@ class FacilityRegistrationRequestResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'assignedFacility', 'wishes']))
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('user.name')
-                    ->label('الطالب')
+                    ->label('Student')
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('user.gpa')
-                    ->label('المعدل')
+                    ->label('GPA')
                     ->sortable(),
                 TextColumn::make('month_index')
-                    ->label('الشهر')
+                    ->label('Month')
                     ->formatStateUsing(fn (int $state): string => Month::labelFor($state))
                     ->sortable(),
                 TextColumn::make('assignedFacility.name')
-                    ->label('المنشأة المعينة')
-                    ->placeholder('لم يتم التعيين'),
+                    ->label('Assigned facility')
+                    ->placeholder('Not assigned'),
                 TextColumn::make('wishes_count')
-                    ->label('عدد الرغبات')
+                    ->label('Wishes count')
                     ->counts('wishes'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('user')
-                    ->label('الطالب')
+                    ->label('Student')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload(),
@@ -206,7 +206,7 @@ class FacilityRegistrationRequestResource extends Resource
         return [
             Repeater::make('wishes')
                 ->columnSpanFull()
-                ->label('رغبات المنشأة')
+                ->label('Facility wishes')
                 ->relationship('wishes')
                 ->live()
                 ->deletable(false)
@@ -228,8 +228,8 @@ class FacilityRegistrationRequestResource extends Resource
                         })
                         ->required(),
                     Toggle::make('is_custom')
-                        ->label('منشأة مخصصة')
-                        ->helperText('اختر منشأة غير مسجلة في النظام (لن تدخل في المنافسة)')
+                        ->label('Custom facility')
+                        ->helperText('Choose a non-registered facility (non-competitive)')
                         ->live()
                         ->afterStateUpdated(function ($state, callable $set, Get $get) {
                             if ($state) {
@@ -239,7 +239,7 @@ class FacilityRegistrationRequestResource extends Resource
                             }
                         }),
                     Select::make('specialization_id')
-                        ->label('التخصص (للأشهر الاختيارية)')
+                        ->label('Specialization (elective months)')
                         ->live()
                         ->afterStateUpdated(function (callable $set): void {
                             $set('facility_id', null);
@@ -259,7 +259,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->label(function (Get $get, $component): string {
                             $priority = ($component->getParentRepeaterItemIndex() ?? 0) + 1;
 
-                            return "الرغبة {$priority}";
+                            return "Wish {$priority}";
                         })
                         ->live()
                         ->options(fn (Get $get, Select $component): array => static::getAvailableFacilityOptions(
@@ -273,11 +273,11 @@ class FacilityRegistrationRequestResource extends Resource
                             $get,
                         ) && ! $get('specialization_id') && ! $get('is_custom')),
                     TextInput::make('custom_facility_name')
-                        ->label('اسم المنشأة المخصصة')
+                        ->label('Custom facility name')
                         ->visible(fn (Get $get) => $get('is_custom'))
                         ->required(fn (Get $get) => $get('is_custom')),
                     TextInput::make('custom_specialization_name')
-                        ->label('اسم التخصص المخصص')
+                        ->label('Custom specialization name')
                         ->visible(fn (Get $get) => $get('is_custom'))
                         ->required(fn (Get $get) => $get('is_custom')),
                     Hidden::make('is_competitive')
@@ -628,7 +628,7 @@ class FacilityRegistrationRequestResource extends Resource
         $electiveMonths = $track->elective_months ?? [];
 
         if (in_array($monthIndex, $electiveMonths, true)) {
-            return 'شهر اختياري';
+            return 'Elective month';
         }
 
         $trackSpecialization = static::findTrackSpecializationForMonth(
@@ -657,7 +657,7 @@ class FacilityRegistrationRequestResource extends Resource
         $electiveMonths = $track->elective_months ?? [];
 
         if (in_array($monthIndex, $electiveMonths, true)) {
-            return 'شهر واحد';
+            return '1 month';
         }
 
         $trackSpecialization = static::findTrackSpecializationForMonth(
@@ -667,7 +667,7 @@ class FacilityRegistrationRequestResource extends Resource
 
         $duration = static::normalizeDuration($trackSpecialization?->specialization?->duration_months);
 
-        return $duration === 1 ? 'شهر واحد' : "{$duration} أشهر";
+        return $duration === 1 ? '1 month' : "{$duration} months";
     }
 
     private static function resolveRepeaterItemKey(Select $component): ?string

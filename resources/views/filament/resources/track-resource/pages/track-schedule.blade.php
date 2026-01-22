@@ -4,8 +4,8 @@
             <table style="width: max-content; min-width: 100%; border-collapse: collapse; text-align: center; font-size: 14px;">
                 <thead>
                     <tr style="background-color: #e0e7ff; color: #1e293b;">
-                        <th style="position: sticky; left: 0; z-index: 20; border: 1px solid #a5b4fc; border-bottom-width: 2px; background-color: #c7d2fe; padding: 18px 24px; text-align: center; font-weight: 700;">
-                            الشهر
+                            <th style="position: sticky; left: 0; z-index: 20; border: 1px solid #a5b4fc; border-bottom-width: 2px; background-color: #c7d2fe; padding: 18px 24px; text-align: center; font-weight: 700;">
+                            Month
                         </th>
                         @foreach ($tracks as $track)
                             <th style="border: 1px solid #c7d2fe; border-bottom-width: 2px; background-color: #e0e7ff; padding: 18px 24px; text-align: center; font-weight: 700;">

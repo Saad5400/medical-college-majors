@@ -14,7 +14,7 @@ class TrackSchedule extends Page
 
     protected string $view = 'filament.resources.track-resource.pages.track-schedule';
 
-    protected static ?string $title = 'عرض مسارات التدريب';
+    protected static ?string $title = 'Track Schedule';
 
     /**
      * @var array<int, int>

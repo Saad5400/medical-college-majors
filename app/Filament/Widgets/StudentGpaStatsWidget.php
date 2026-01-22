@@ -25,9 +25,9 @@ class StudentGpaStatsWidget extends StatsOverviewWidget
             ->first();
 
         return [
-            Stat::make('أقل معدل', $this->formatGpa($stats?->min_gpa)),
-            Stat::make('متوسط المعدلات', $this->formatGpa($stats?->avg_gpa)),
-            Stat::make('أقصى معدل', $this->formatGpa($stats?->max_gpa)),
+            Stat::make('Min GPA', $this->formatGpa($stats?->min_gpa)),
+            Stat::make('Average GPA', $this->formatGpa($stats?->avg_gpa)),
+            Stat::make('Max GPA', $this->formatGpa($stats?->max_gpa)),
         ];
     }
 

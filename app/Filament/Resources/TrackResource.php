@@ -30,32 +30,32 @@ class TrackResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $modelLabel = 'مسار';
+    protected static ?string $modelLabel = 'Track';
 
-    protected static ?string $pluralModelLabel = 'المسارات';
+    protected static ?string $pluralModelLabel = 'Tracks';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('المسار')
+                    ->label('Track name')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('max_users')
-                    ->label('الحد الأقصى لعدد الطلاب')
+                    ->label('Maximum students')
                     ->required()
                     ->integer()
                     ->minValue(0),
                 Toggle::make('is_leader_only')
-                    ->label('مسار للمشرفين فقط')
-                    ->helperText('إذا تم تفعيل هذا الخيار، لن يظهر هذا المسار للطلاب العاديين')
+                    ->label('Leader-only track')
+                    ->helperText('Hide this track from regular students when enabled')
                     ->default(false),
                 CheckboxList::make('elective_months')
-                    ->label('الأشهر الاختيارية')
-                    ->helperText('حدد الأشهر التي يمكن للطالب فيها اختيار تخصص/مستشفى مختلف')
+                    ->label('Elective months')
+                    ->helperText('Select months when students may choose a custom specialization or facility')
                     ->options(Month::options())
                     ->rule(function (?Track $record): \Closure {
                         return function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
@@ -69,12 +69,12 @@ class TrackResource extends Resource
                                 return;
                             }
 
-                            $labels = implode('، ', array_map(
+                            $labels = implode(', ', array_map(
                                 fn (int $month): string => Month::labelFor($month),
                                 $conflicts,
                             ));
 
-                            $fail("لا يمكن اختيار أشهر اختيارية تتداخل مع تخصصات موجودة: {$labels}.");
+                            $fail("Elective months cannot overlap with scheduled specializations: {$labels}.");
                         };
                     })
                     ->columns(4),
@@ -115,31 +115,31 @@ class TrackResource extends Resource
             })
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('تاريخ التعديل')
+                    ->label('Updated at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->label('المسار')
+                    ->label('Track')
                     ->searchable(),
                 TextColumn::make('max_users')
-                    ->label('الحد الأقصى لعدد الطلاب')
+                    ->label('Maximum students')
                     ->sortable(),
                 IconColumn::make('is_leader_only')
-                    ->label('للمشرفين فقط')
+                    ->label('Leader only')
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('first_choice_users_count')
-                    ->label('عدد الطلاب الذين إختاروه كأول رغبة')
+                    ->label('First choice picks')
                     ->default(0)
                     ->sortable(),
                 TextColumn::make('users_count')
-                    ->label('عدد الطلاب')
+                    ->label('Student count')
                     ->sortable(),
             ])
             ->defaultSort('sort')

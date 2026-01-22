@@ -23,14 +23,14 @@ class ListFacilityRegistrationRequests extends ListRecords
         return [
             CreateAction::make(),
             Action::make('distribute')
-                ->label('توزيع الطلاب على المنشآت')
+                ->label('Distribute students to facilities')
                 // TODO: UNCOMMENT THIS BACK AFTER TESTING
                 // ->visible(fn () => auth()->user()->hasRole('admin') && ! app(RegistrationSettings::class)->facility_registration_open)
                 ->form([
                     Select::make('month_index')
                         ->searchable()
                         ->preload()
-                        ->label('الشهر')
+                        ->label('Month')
                         ->options(Month::options())
                         ->required(),
                 ])
@@ -46,7 +46,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                     $requests = FacilityRegistrationRequest::where('month_index', $monthIndex)
                         ->with(['user', 'competitiveWishes.facility'])
                         ->get()
-                        ->sortByDesc(fn($request) => $request->user->gpa);
+                        ->sortByDesc(fn ($request) => $request->user->gpa);
 
                     // Get facility capacities for this month
                     $facilityCapacities = FacilitySeat::where('month_index', $monthIndex)
@@ -59,7 +59,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                         $wishes = $request->competitiveWishes;
 
                         foreach ($wishes as $wish) {
-                            if (!$wish->facility_id) {
+                            if (! $wish->facility_id) {
                                 continue;
                             }
 
@@ -80,7 +80,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                     $monthLabel = Month::labelFor($monthIndex);
 
                     Notification::make()
-                        ->title("تم توزيع الطلاب على المنشآت لشهر {$monthLabel}")
+                        ->title("Students distributed to facilities for {$monthLabel}")
                         ->success()
                         ->send();
                 })

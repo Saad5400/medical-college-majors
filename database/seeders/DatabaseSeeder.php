@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         if (! Track::query()->exists()) {
             for ($i = 0; $i < 15; $i++) {
                 Track::query()->create([
-                    'name' => 'مسار رقم '.($i + 1),
+                    'name' => 'Track '.($i + 1),
                     'max_users' => 20,
                 ]);
             }
