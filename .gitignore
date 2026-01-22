@@ -21,6 +21,22 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.mcp.json
+.mcp.*.json
+.mcp/
+mcp.json
+mcp.*.json
+.cursor/mcp.json
+.cursor/mcp.*.json
+.cursor/mcp/
+.vscode/mcp.json
+.vscode/mcp.*.json
+.vscode/mcp/
+.junie/mcp/mcp.json
+.junie/mcp/mcp.*.json
+.junie/mcp/
+.gemini/settings.json
+opencode.json
 
 **/caddy
 frankenphp
