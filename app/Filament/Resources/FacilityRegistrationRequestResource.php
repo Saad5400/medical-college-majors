@@ -119,6 +119,20 @@ class FacilityRegistrationRequestResource extends Resource
                     ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
                     ->required()
                     ->live(),
+                Fieldset::make('معلومات الشهر المحدد')
+                    ->schema([
+                        TextEntry::make('month_track')
+                            ->label('المسار')
+                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthTrackInfo($get, $record)),
+                        TextEntry::make('month_specialization')
+                            ->label('التخصص')
+                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthSpecializationInfo($get, $record)),
+                        TextEntry::make('month_duration')
+                            ->label('المدة')
+                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthDurationInfo($get, $record)),
+                    ])
+                    ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::resolveMonthIndex($get, $record) !== null)
+                    ->columnSpanFull(),
                 ...static::getWishFormFields(),
             ]);
     }
@@ -224,32 +238,12 @@ class FacilityRegistrationRequestResource extends Resource
                                 // This is handled in the model/controller
                             }
                         }),
-                    Select::make('facility_id')
-                        ->label(function (Get $get, $component): string {
-                            $priority = ($component->getParentRepeaterItemIndex() ?? 0) + 1;
-
-                            return "الرغبة {$priority}";
-                        })
-                        ->live()
-                        ->afterStateUpdated(function (callable $set, Get $get): void {
-                            if (static::isElectiveMonth($get)) {
-                                $set('specialization_id', null);
-                            }
-                        })
-                        ->options(fn (Get $get, Select $component): array => static::getAvailableFacilityOptions(
-                            $get,
-                            $component,
-                        ))
-                        ->searchable()
-                        ->preload()
-                        ->visible(fn (Get $get) => ! $get('is_custom')),
-                    TextInput::make('custom_facility_name')
-                        ->label('اسم المنشأة المخصصة')
-                        ->visible(fn (Get $get) => $get('is_custom'))
-                        ->required(fn (Get $get) => $get('is_custom')),
                     Select::make('specialization_id')
                         ->label('التخصص (للأشهر الاختيارية)')
                         ->live()
+                        ->afterStateUpdated(function (callable $set): void {
+                            $set('facility_id', null);
+                        })
                         ->options(fn (Get $get): array => static::getElectiveSpecializationOptions(
                             $get,
                         ))
@@ -258,9 +252,30 @@ class FacilityRegistrationRequestResource extends Resource
                         ->visible(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
                         ) && ! $get('is_custom'))
+                        ->required(fn (Get $get): bool => static::isElectiveMonth(
+                            $get,
+                        ) && ! $get('is_custom')),
+                    Select::make('facility_id')
+                        ->label(function (Get $get, $component): string {
+                            $priority = ($component->getParentRepeaterItemIndex() ?? 0) + 1;
+
+                            return "الرغبة {$priority}";
+                        })
+                        ->live()
+                        ->options(fn (Get $get, Select $component): array => static::getAvailableFacilityOptions(
+                            $get,
+                            $component,
+                        ))
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Get $get) => ! $get('is_custom'))
                         ->disabled(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
-                        ) && ! $get('facility_id') && ! $get('is_custom')),
+                        ) && ! $get('specialization_id') && ! $get('is_custom')),
+                    TextInput::make('custom_facility_name')
+                        ->label('اسم المنشأة المخصصة')
+                        ->visible(fn (Get $get) => $get('is_custom'))
+                        ->required(fn (Get $get) => $get('is_custom')),
                     TextInput::make('custom_specialization_name')
                         ->label('اسم التخصص المخصص')
                         ->visible(fn (Get $get) => $get('is_custom'))
@@ -384,14 +399,10 @@ class FacilityRegistrationRequestResource extends Resource
             return [];
         }
 
-        $seatQuery = FacilitySeat::query()
-            ->where('month_index', $monthIndex);
-
-        if ($facilityId = $get('facility_id')) {
-            $seatQuery->where('facility_id', $facilityId);
-        }
-
-        $specializationIds = $seatQuery->select('specialization_id')->distinct();
+        $specializationIds = FacilitySeat::query()
+            ->where('month_index', $monthIndex)
+            ->select('specialization_id')
+            ->distinct();
 
         return Specialization::query()
             ->whereIn('id', $specializationIds)
@@ -590,6 +601,73 @@ class FacilityRegistrationRequestResource extends Resource
     private static function normalizeDuration(?int $durationMonths): int
     {
         return max(1, (int) $durationMonths);
+    }
+
+    private static function getMonthTrackInfo(Get $get, ?FacilityRegistrationRequest $record = null): string
+    {
+        $user = static::resolveFormUser($get, $record);
+
+        return $user?->track?->name ?? '-';
+    }
+
+    private static function getMonthSpecializationInfo(Get $get, ?FacilityRegistrationRequest $record = null): string
+    {
+        $monthIndex = static::resolveMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return '-';
+        }
+
+        $user = static::resolveFormUser($get, $record);
+
+        if (! $user || ! $user->track) {
+            return '-';
+        }
+
+        $track = $user->track;
+        $electiveMonths = $track->elective_months ?? [];
+
+        if (in_array($monthIndex, $electiveMonths, true)) {
+            return 'شهر اختياري';
+        }
+
+        $trackSpecialization = static::findTrackSpecializationForMonth(
+            $track->trackSpecializations,
+            $monthIndex,
+        );
+
+        return $trackSpecialization?->specialization?->name ?? '-';
+    }
+
+    private static function getMonthDurationInfo(Get $get, ?FacilityRegistrationRequest $record = null): string
+    {
+        $monthIndex = static::resolveMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return '-';
+        }
+
+        $user = static::resolveFormUser($get, $record);
+
+        if (! $user || ! $user->track) {
+            return '-';
+        }
+
+        $track = $user->track;
+        $electiveMonths = $track->elective_months ?? [];
+
+        if (in_array($monthIndex, $electiveMonths, true)) {
+            return 'شهر واحد';
+        }
+
+        $trackSpecialization = static::findTrackSpecializationForMonth(
+            $track->trackSpecializations,
+            $monthIndex,
+        );
+
+        $duration = static::normalizeDuration($trackSpecialization?->specialization?->duration_months);
+
+        return $duration === 1 ? 'شهر واحد' : "{$duration} أشهر";
     }
 
     private static function resolveRepeaterItemKey(Select $component): ?string
