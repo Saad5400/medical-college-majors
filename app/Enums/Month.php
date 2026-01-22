@@ -20,18 +20,6 @@ enum Month: int
     public function label(): string
     {
         return match ($this) {
-            //            self::January => 'يناير',
-            //            self::February => 'فبراير',
-            //            self::March => 'مارس',
-            //            self::April => 'أبريل',
-            //            self::May => 'مايو',
-            //            self::June => 'يونيو',
-            //            self::July => 'يوليو',
-            //            self::August => 'أغسطس',
-            //            self::September => 'سبتمبر',
-            //            self::October => 'أكتوبر',
-            //            self::November => 'نوفمبر',
-            //            self::December => 'ديسمبر',
             self::January => 'January 1',
             self::February => 'February 2',
             self::March => 'March 3',

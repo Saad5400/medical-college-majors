@@ -19,11 +19,11 @@ class TrackSpecializationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'trackSpecializations';
 
-    protected static ?string $title = 'التخصصات';
+    protected static ?string $title = 'Specializations';
 
-    protected static ?string $pluralModelLabel = 'التخصصات';
+    protected static ?string $pluralModelLabel = 'Specializations';
 
-    protected static ?string $modelLabel = 'تخصص';
+    protected static ?string $modelLabel = 'Specialization';
 
     public function table(Table $table): Table
     {
@@ -31,16 +31,16 @@ class TrackSpecializationsRelationManager extends RelationManager
             ->recordTitleAttribute('specialization.name')
             ->columns([
                 TextColumn::make('month_index')
-                    ->label('الشهر')
+                    ->label('Month')
                     ->sortable()
                     ->formatStateUsing(fn (int $state): string => Month::labelFor($state)),
                 TextColumn::make('specialization.name')
-                    ->label('التخصص')
+                    ->label('Specialization')
                     ->searchable(),
                 TextColumn::make('specialization.duration_months')
-                    ->label('المدة (أشهر)'),
+                    ->label('Duration (months)'),
                 TextColumn::make('specialization.facility_type')
-                    ->label('نوع المنشأة')
+                    ->label('Facility type')
                     ->formatStateUsing(fn ($state): string => $state->label()),
             ])
             ->defaultSort('month_index')
@@ -70,7 +70,7 @@ class TrackSpecializationsRelationManager extends RelationManager
     {
         return [
             Select::make('month_index')
-                ->label('الشهر')
+                ->label('Month')
                 ->searchable()
                 ->preload()
                 ->live()
@@ -111,17 +111,17 @@ class TrackSpecializationsRelationManager extends RelationManager
                         $conflicts = array_values(array_unique($conflicts));
                         sort($conflicts);
 
-                        $labels = implode('، ', array_map(
+                        $labels = implode(', ', array_map(
                             fn (int $month): string => Month::labelFor($month),
                             $conflicts,
                         ));
 
-                        $fail("لا يمكن اختيار تخصص يغطي أشهر اختيارية: {$labels}.");
+                        $fail("Specializations cannot cover elective months: {$labels}.");
                     };
                 })
                 ->required(),
             Select::make('specialization_id')
-                ->label('التخصص')
+                ->label('Specialization')
                 ->searchable()
                 ->preload()
                 ->live()

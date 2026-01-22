@@ -23,19 +23,19 @@ class ListTracks extends ListRecords
         return [
             CreateAction::make(),
             Action::make('schedule')
-                ->label('عرض جدول المسارات')
+                ->label('View track schedule')
                 ->icon('heroicon-o-table-cells')
                 ->url(fn (): string => TrackResource::getUrl('schedule'))
                 ->color('info'),
             ExportAction::make()
                 ->exporter(UserExporter::class)
-                ->label('تصدير الطلاب')
-                ->modalHeading('تصدير الطلاب')
+                ->label('Export students')
+                ->modalHeading('Export students')
                 ->modifyQueryUsing(fn () => User::query()->whereDoesntHave('roles')->orderBy('track_id'))
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('info'),
             Action::make('distribute')
-                ->label('توزيع الطلاب على المسارات')
+                ->label('Distribute students to tracks')
                 ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->action(function () {
                     DB::transaction(function () {
@@ -91,7 +91,7 @@ class ListTracks extends ListRecords
                     });
 
                     Notification::make()
-                        ->title('تم توزيع الطلاب على المسارات')
+                        ->title('Students distributed to tracks')
                         ->success()
                         ->send();
                 })

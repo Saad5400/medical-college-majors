@@ -13,20 +13,30 @@ return [
     |
     */
 
-    'reset' => 'تم تحديث بيانات الدخول الخاصة بك!',
-    'sent' => 'تم إرسال رابط التحديث عبر البريد الإلكتروني!',
-    'throttled' => 'الرجاء الانتظار قبل إعادة المحاولة.',
-    'token' => 'رمز التحقق غير صالح.',
-    'user' => 'لا يمكننا العثور على مستخدم بهذا البريد الإلكتروني.',
+    'reset' => 'Your password has been reset!',
+    'sent' => 'We have emailed your password reset link!',
+    'throttled' => 'Please wait before retrying.',
+    'token' => 'This password reset token is invalid.',
+    'user' => "We can't find a user with that email address.",
 
-    // إشعارات البريد الإلكتروني لتحديث بيانات الدخول
-    'Reset Password Notification' => 'طلب تحديث بيانات الدخول',
-    'You are receiving this email because we received a password reset request for your account.' => 'تلقينا طلباً لتحديث بيانات الدخول لحسابك.',
-    'Reset Password' => 'تحديث بيانات الدخول',
-    'This password reset link will expire in :count minutes.' => 'هذا الرابط صالح لمدة :count دقيقة.',
-    'If you did not request a password reset, no further action is required.' => 'إذا لم تقم بهذا الطلب، يرجى تجاهل هذه الرسالة.',
-    'Hello!' => 'مرحباً!',
-    'Regards,' => 'مع تحياتنا،',
-    "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:" => 'إذا واجهتك مشكلة في النقر على زر ":actionText"، يمكنك نسخ الرابط أدناه ولصقه في متصفحك:',
+    /*
+    |--------------------------------------------------------------------------
+    | Password Reset Email Lines
+    |--------------------------------------------------------------------------
+    |
+    | The following lines are used whenever the framework generates an email
+    | during password reset attempts. You are free to change them to anything
+    | you want to customize your views to better match your application.
+    |
+    */
+
+    'Reset Password Notification' => 'Password Reset Notification',
+    'You are receiving this email because we received a password reset request for your account.' => 'You are receiving this email because we received a password reset request for your account.',
+    'Reset Password' => 'Reset Password',
+    'This password reset link will expire in :count minutes.' => 'This password reset link will expire in :count minutes.',
+    'If you did not request a password reset, no further action is required.' => 'If you did not request a password reset, no further action is required.',
+    'Hello!' => 'Hello!',
+    'Regards,' => 'Regards,',
+    "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:" => "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:",
 
 ];

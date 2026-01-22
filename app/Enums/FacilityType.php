@@ -10,8 +10,8 @@ enum FacilityType: string
     public function label(): string
     {
         return match ($this) {
-            self::Hospital => 'مستشفى',
-            self::HealthcareCenter => 'مركز صحي',
+            self::Hospital => 'Hospital',
+            self::HealthcareCenter => 'Healthcare center',
         };
     }
 }

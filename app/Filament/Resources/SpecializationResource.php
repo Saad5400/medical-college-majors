@@ -25,34 +25,34 @@ class SpecializationResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-beaker';
 
-    protected static ?string $modelLabel = 'تخصص';
+    protected static ?string $modelLabel = 'Specialization';
 
-    protected static ?string $pluralModelLabel = 'التخصصات';
+    protected static ?string $pluralModelLabel = 'Specializations';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('اسم التخصص')
+                    ->label('Specialization name')
                     ->required()
                     ->maxLength(255),
                 ColorPicker::make('color')
-                    ->label('لون التخصص')
+                    ->label('Color')
                     ->required()
                     ->default('#94a3b8')
                     ->regex('/^#([a-fA-F0-9]{6})$/'),
                 TextInput::make('duration_months')
-                    ->label('مدة التخصص (بالأشهر)')
+                    ->label('Duration (months)')
                     ->required()
                     ->integer()
                     ->minValue(1)
                     ->maxValue(12)
                     ->default(1),
                 Select::make('facility_type')
-                    ->label('نوع المنشأة')
+                    ->label('Facility type')
                     ->searchable()
                     ->preload()
                     ->required()
@@ -69,25 +69,25 @@ class SpecializationResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('تاريخ التعديل')
+                    ->label('Updated at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->label('اسم التخصص')
+                    ->label('Name')
                     ->searchable(),
                 ColorColumn::make('color')
-                    ->label('اللون'),
+                    ->label('Color'),
                 TextColumn::make('duration_months')
-                    ->label('المدة (أشهر)')
+                    ->label('Duration (months)')
                     ->sortable(),
                 TextColumn::make('facility_type')
-                    ->label('نوع المنشأة')
+                    ->label('Facility type')
                     ->formatStateUsing(fn (FacilityType $state): string => $state->label())
                     ->sortable(),
             ])

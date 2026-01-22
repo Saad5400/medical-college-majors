@@ -29,9 +29,9 @@ class RegistrationRequestResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-up';
 
-    protected static ?string $modelLabel = 'طلب تسجيل';
+    protected static ?string $modelLabel = 'Registration request';
 
-    protected static ?string $pluralModelLabel = 'طلبات التسجيل';
+    protected static ?string $pluralModelLabel = 'Registration requests';
 
     public static function canCreate(): bool
     {
@@ -103,29 +103,29 @@ class RegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
-                Fieldset::make('بيانات الطالب')
+                Fieldset::make('Student details')
                     ->schema([
                         TextEntry::make('user_name')
-                            ->label('الاسم')
+                            ->label('Name')
                             ->state(auth()->user()->name)
                             ->disabled(),
                         TextEntry::make('user_email')
-                            ->label('البريد الإلكتروني')
+                            ->label('Email')
                             ->state(auth()->user()->email)
                             ->disabled(),
                         TextEntry::make('user_student_id')
-                            ->label('الرقم الجامعي')
+                            ->label('Student ID')
                             ->state(auth()->user()->student_id)
                             ->disabled(),
                         TextEntry::make('user_gpa')
-                            ->label('المعدل')
+                            ->label('GPA')
                             ->state(auth()->user()->gpa)
                             ->disabled(),
                     ])
                     ->visible(fn () => ! auth()->user()->hasRole('admin'))
                     ->columnSpanFull(),
                 Select::make('user_id')
-                    ->label('الطالب')
+                    ->label('Student')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
@@ -141,25 +141,25 @@ class RegistrationRequestResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'trackRegistrationRequests.track']))
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('updated_at')
-                    ->label('تاريخ التعديل')
+                    ->label('Updated at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.name')
-                    ->label('الطالب')
+                    ->label('Student')
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('user.gpa')
-                    ->label('المعدل')
+                    ->label('GPA')
                     ->sortable(),
-                TextColumn::make('المسارات')
+                TextColumn::make('trackRegistrationRequests')
                     ->getStateUsing(fn ($record) => $record->trackRegistrationRequests->pluck('track.name'))
-                    ->label('رغبات التسكين'),
+                    ->label('Track preferences'),
             ])
             ->defaultSort('user.gpa', 'desc')
             ->filters([
@@ -209,7 +209,7 @@ class RegistrationRequestResource extends Resource
         return [
             Repeater::make('trackRegistrationRequests')
                 ->columnSpanFull()
-                ->label('رغبات التسكين')
+                ->label('Track preferences')
                 ->relationship('trackRegistrationRequests')
                 ->live()
                 ->deletable(false)
@@ -219,7 +219,7 @@ class RegistrationRequestResource extends Resource
                 ->defaultItems(fn () => $trackCount)
                 ->schema([
                     Hidden::make('sort')
-                        ->label('ترتيب')
+                        ->label('Sort order')
                         ->default(function (Get $get, $component) {
                             $requests = $get('data.trackRegistrationRequests', true);
                             $path = explode('.', $component->getStatePath())[2];
@@ -229,7 +229,7 @@ class RegistrationRequestResource extends Resource
                         ->required(),
                     Select::make('track_id')
                         ->label(function (Get $get, $component): ?string {
-                            return 'الرغبة '.($component->getParentRepeaterItemIndex() + 1);
+                            return 'Preference '.($component->getParentRepeaterItemIndex() + 1);
                         })
                         ->live()
                         ->relationship('track', 'name')

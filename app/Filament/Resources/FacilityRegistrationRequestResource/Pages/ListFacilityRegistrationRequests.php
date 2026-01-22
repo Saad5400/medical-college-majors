@@ -23,13 +23,13 @@ class ListFacilityRegistrationRequests extends ListRecords
         return [
             CreateAction::make(),
             Action::make('distribute')
-                ->label('توزيع الطلاب على المنشآت')
+                ->label('Distribute students to facilities')
                 ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->form([
                     Select::make('month_index')
                         ->searchable()
                         ->preload()
-                        ->label('الشهر')
+                        ->label('Month')
                         ->options(Month::options())
                         ->required(),
                 ])
@@ -106,7 +106,7 @@ class ListFacilityRegistrationRequests extends ListRecords
                     });
 
                     Notification::make()
-                        ->title("تم توزيع الطلاب على المنشآت لشهر {$monthLabel}")
+                        ->title("Students distributed to facilities for {$monthLabel}")
                         ->success()
                         ->send();
                 })

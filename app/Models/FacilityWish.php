@@ -56,10 +56,10 @@ class FacilityWish extends Model
     public function getFacilityDisplayName(): string
     {
         if ($this->is_custom && $this->custom_facility_name) {
-            return $this->custom_facility_name.' (مخصص)';
+            return $this->custom_facility_name.' (Custom)';
         }
 
-        return $this->facility?->name ?? 'غير محدد';
+        return $this->facility?->name ?? 'Unspecified';
     }
 
     /**
@@ -68,7 +68,7 @@ class FacilityWish extends Model
     public function getSpecializationDisplayName(): ?string
     {
         if ($this->custom_specialization_name) {
-            return $this->custom_specialization_name.' (مخصص)';
+            return $this->custom_specialization_name.' (Custom)';
         }
 
         return $this->specialization?->name;

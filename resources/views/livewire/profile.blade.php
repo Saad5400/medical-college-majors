@@ -7,13 +7,13 @@
                 class="w-full"
                 type="submit"
             >
-                حفظ
+                Save
             </x-filament::button>
             <x-filament::button
                 class="w-full !bg-transparent !text-red-500 hover:!bg-red-500 hover:!text-white !transition-colors"
                 wire:click="logout"
             >
-                تسجيل الخروج
+                Log Out
             </x-filament::button>
         </div>
     </form>

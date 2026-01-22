@@ -27,22 +27,22 @@ class FacilityResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static ?string $modelLabel = 'منشأة';
+    protected static ?string $modelLabel = 'Facility';
 
-    protected static ?string $pluralModelLabel = 'المنشآت';
+    protected static ?string $pluralModelLabel = 'Facilities';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('اسم المنشأة')
+                    ->label('Name')
                     ->required()
                     ->maxLength(255),
                 Select::make('type')
-                    ->label('نوع المنشأة')
+                    ->label('Facility type')
                     ->searchable()
                     ->preload()
                     ->required()
@@ -59,33 +59,33 @@ class FacilityResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('تاريخ التعديل')
+                    ->label('Updated at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->label('اسم المنشأة')
+                    ->label('Name')
                     ->searchable(),
                 TextColumn::make('type')
-                    ->label('نوع المنشأة')
+                    ->label('Type')
                     ->formatStateUsing(fn (FacilityType $state): string => $state->label())
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('type')
-                    ->label('نوع المنشأة')
+                    ->label('Facility type')
                     ->options([
                         FacilityType::Hospital->value => FacilityType::Hospital->label(),
                         FacilityType::HealthcareCenter->value => FacilityType::HealthcareCenter->label(),
                     ]),
                 SelectFilter::make('specialization_id')
-                    ->label('التخصص')
+                    ->label('Specialization')
                     ->searchable()
                     ->preload()
                     ->options(fn (): array => Specialization::query()->orderBy('name')->pluck('name', 'id')->all())
@@ -97,7 +97,7 @@ class FacilityResource extends Resource
                         }
                     }),
                 SelectFilter::make('month')
-                    ->label('الشهر')
+                    ->label('Month')
                     ->searchable()
                     ->options(Month::options())
                     ->query(function ($query, array $data) {

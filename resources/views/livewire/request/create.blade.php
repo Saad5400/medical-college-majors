@@ -3,7 +3,7 @@
         {{ $this->form }}
 
         <x-filament::button type="submit">
-            حفظ
+            Save
         </x-filament::button>
     </form>
 

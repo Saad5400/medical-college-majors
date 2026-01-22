@@ -24,47 +24,47 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $modelLabel = 'مستخدم';
+    protected static ?string $modelLabel = 'User';
 
-    protected static ?string $pluralModelLabel = 'المستخدمين';
+    protected static ?string $pluralModelLabel = 'Users';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'الإعدادات';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('الاسم')
+                    ->label('Name')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
-                    ->label('البريد الإلكتروني')
+                    ->label('Email')
                     ->email()
                     ->required()
                     ->maxLength(255),
                 TextInput::make('phone_number')
-                    ->label('رقم الهاتف')
+                    ->label('Phone number')
                     ->tel()
                     ->maxLength(255),
                 TextInput::make('gpa')
-                    ->label('المعدل')
+                    ->label('GPA')
                     ->numeric()
                     ->default(null),
                 TextInput::make('student_id')
-                    ->label('رقم الطالب')
+                    ->label('Student ID')
                     ->maxLength(255)
                     ->default(null),
                 Select::make('track_id')
-                    ->label('المسار')
+                    ->label('Track')
                     ->relationship('track', 'name')
                     ->searchable()
                     ->preload()
                     ->nullable(),
                 Select::make('roles')
-                    ->label('الأدوار')
+                    ->label('Roles')
                     ->relationship('roles', 'name')
                     ->searchable()
                     ->preload()
@@ -73,7 +73,7 @@ class UserResource extends Resource
                     ->columnSpanFull()
                     ->schema([
                         Toggle::make('change_password')
-                            ->label('تغيير كلمة المرور')
+                            ->label('Change password')
                             ->live()
                             ->default($schema->getOperation() === 'create')
                             ->hidden($schema->getOperation() === 'create'),
@@ -82,7 +82,7 @@ class UserResource extends Resource
                                 if ($get('change_password')) {
                                     return [
                                         TextInput::make('password')
-                                            ->label('كلمة المرور')
+                                            ->label('Password')
                                             ->password()
                                             ->required()
                                             ->minLength(8)
@@ -101,38 +101,38 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label('Created at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('تاريخ التعديل')
+                    ->label('Updated at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->label('الاسم')
+                    ->label('Name')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
+                    ->label('Email')
                     ->searchable(),
                 TextColumn::make('phone_number')
-                    ->label('رقم الهاتف')
+                    ->label('Phone number')
                     ->searchable(),
                 TextColumn::make('gpa')
-                    ->label('المعدل')
+                    ->label('GPA')
                     ->sortable(),
                 TextColumn::make('student_id')
-                    ->label('رقم الطالب')
+                    ->label('Student ID')
                     ->searchable(),
                 TextColumn::make('track.name')
-                    ->label('المسار')
+                    ->label('Track')
                     ->searchable()
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('track')
-                    ->label('المسار')
+                    ->label('Track')
                     ->relationship('track', 'name')
                     ->searchable()
                     ->preload(),
