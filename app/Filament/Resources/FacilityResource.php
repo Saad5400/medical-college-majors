@@ -3,12 +3,13 @@
 namespace App\Filament\Resources;
 
 use App\Enums\FacilityType;
+use App\Enums\Month;
 use App\Filament\Resources\FacilityResource\Pages\CreateFacility;
 use App\Filament\Resources\FacilityResource\Pages\EditFacility;
-use App\Filament\Resources\FacilityResource\Pages\FacilitySchedule;
 use App\Filament\Resources\FacilityResource\Pages\ListFacilities;
 use App\Filament\Resources\FacilityResource\RelationManagers\FacilitySeatsRelationManager;
 use App\Models\Facility;
+use App\Models\Specialization;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -83,6 +84,29 @@ class FacilityResource extends Resource
                         FacilityType::Hospital->value => FacilityType::Hospital->label(),
                         FacilityType::HealthcareCenter->value => FacilityType::HealthcareCenter->label(),
                     ]),
+                SelectFilter::make('specialization_id')
+                    ->label('التخصص')
+                    ->searchable()
+                    ->preload()
+                    ->options(fn (): array => Specialization::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->query(function ($query, array $data) {
+                        if (! empty($data['value'])) {
+                            $query->whereHas('facilitySeats', function ($q) use ($data) {
+                                $q->where('specialization_id', $data['value']);
+                            });
+                        }
+                    }),
+                SelectFilter::make('month')
+                    ->label('الشهر')
+                    ->searchable()
+                    ->options(Month::options())
+                    ->query(function ($query, array $data) {
+                        if (! empty($data['value'])) {
+                            $query->whereHas('facilitySeats', function ($q) use ($data) {
+                                $q->where('month_index', $data['value']);
+                            });
+                        }
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),
