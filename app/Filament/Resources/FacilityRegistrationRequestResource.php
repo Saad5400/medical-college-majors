@@ -227,7 +227,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->required(),
                     Toggle::make('is_custom')
                         ->label('Custom facility')
-                        ->helperText('Choose a non-registered facility (non-competitive)')
+                        ->helperText('Choose a non-registered facility (no automatic seat assignment! expect delays.)')
                         ->live(),
                     Select::make('specialization_id')
                         ->label('Specialization (elective months)')
@@ -243,9 +243,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->visible(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
                         ) && ! $get('is_custom'))
-                        ->required(fn (Get $get): bool => static::isElectiveMonth(
-                            $get,
-                        ) && ! $get('is_custom')),
+                        ->required(fn (Get $get, Select $component): bool => static::isSpecializationRequired($get, $component)),
                     Select::make('facility_id')
                         ->label(function (Get $get, $component): string {
                             $priority = ($component->getParentRepeaterItemIndex() ?? 0) + 1;
@@ -262,7 +260,8 @@ class FacilityRegistrationRequestResource extends Resource
                         ->visible(fn (Get $get) => ! $get('is_custom'))
                         ->disabled(fn (Get $get): bool => static::isElectiveMonth(
                             $get,
-                        ) && ! $get('specialization_id') && ! $get('is_custom')),
+                        ) && ! $get('specialization_id') && ! $get('is_custom'))
+                        ->required(fn (Get $get, Select $component) => static::isFacilityRequired($get, $component)),
                     TextInput::make('custom_facility_name')
                         ->label('Custom facility name')
                         ->visible(fn (Get $get) => $get('is_custom'))
@@ -286,6 +285,74 @@ class FacilityRegistrationRequestResource extends Resource
         $monthIndex = static::resolveMonthIndex($get, $record);
 
         return $monthIndex !== null;
+    }
+
+    private static function isFacilityRequired(Get $get, Select $component): bool
+    {
+        $monthIndex = static::resolveWishMonthIndex($get);
+
+        if (! $monthIndex) {
+            return false;
+        }
+
+        // Always required for non-elective months (unless is_custom is true, but field is hidden then)
+        if (! static::isElectiveMonth($get)) {
+            return true;
+        }
+
+        if ($get('is_custom')) {
+            return false;
+        }
+
+        // For elective months, check if any preceding wish is custom
+        if (static::hasPrecedingCustomWish($get, $component)) {
+            return false;
+        }
+
+        // If not in custom mode (competing), all wishes are required
+        return true;
+    }
+
+    private static function isSpecializationRequired(Get $get, Select $component): bool
+    {
+        if (! static::isElectiveMonth($get)) {
+            return false;
+        }
+
+        if ($get('is_custom')) {
+            return false;
+        }
+
+        // If in custom mode (preceding wish is custom), specialization dropdown is optional
+        if (static::hasPrecedingCustomWish($get, $component)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function hasPrecedingCustomWish(Get $get, Select $component): bool
+    {
+        $wishes = $get('../../wishes');
+
+        if (! is_array($wishes) || empty($wishes)) {
+            return false;
+        }
+
+        $currentIndex = $component->getParentRepeaterItemIndex();
+        $wishes = array_values($wishes);
+
+        for ($i = 0; $i < $currentIndex; $i++) {
+            if (! isset($wishes[$i])) {
+                continue;
+            }
+
+            if ($wishes[$i]['is_custom'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

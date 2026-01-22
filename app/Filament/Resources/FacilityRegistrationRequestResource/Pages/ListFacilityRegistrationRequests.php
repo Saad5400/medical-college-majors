@@ -14,9 +14,18 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\DB;
 
+use App\Filament\Resources\FacilityRegistrationRequestResource\Widgets\StudentFacilityRequestsWidget;
+
 class ListFacilityRegistrationRequests extends ListRecords
 {
     protected static string $resource = FacilityRegistrationRequestResource::class;
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            StudentFacilityRequestsWidget::class,
+        ];
+    }
 
     protected function getHeaderActions(): array
     {
