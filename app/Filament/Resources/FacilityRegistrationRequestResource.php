@@ -102,7 +102,9 @@ class FacilityRegistrationRequestResource extends Resource
                         $get,
                         $record,
                     ))
-                    ->disabled(fn (Get $get): bool => auth()->user()->hasRole('admin') && ! $get('user_id'))
+                    ->default(fn (Get $get, ?FacilityRegistrationRequest $record) => array_key_first(static::getAvailableMonthOptions($get, $record)))
+                    ->disabled(fn (Get $get): bool => ! auth()->user()->hasRole('admin') || (auth()->user()->hasRole('admin') && ! $get('user_id')))
+                    ->dehydrated()
                     ->required()
                     ->live(),
                 Fieldset::make('Selected month overview')
@@ -158,7 +160,7 @@ class FacilityRegistrationRequestResource extends Resource
                     ->label('Assigned specialization')
                     ->placeholder('Not assigned'),
                 TextColumn::make('wishes_count')
-                    ->label('Wishes count')
+                    ->label('Choices count')
                     ->counts('wishes'),
             ])
             ->defaultSort('created_at', 'desc')
@@ -202,7 +204,7 @@ class FacilityRegistrationRequestResource extends Resource
         return [
             Repeater::make('wishes')
                 ->columnSpanFull()
-                ->label('Facility wishes')
+                ->label('Facility choices')
                 ->relationship('wishes')
                 ->live()
                 ->deletable(false)
@@ -248,7 +250,7 @@ class FacilityRegistrationRequestResource extends Resource
                         ->label(function (Get $get, $component): string {
                             $priority = ($component->getParentRepeaterItemIndex() ?? 0) + 1;
 
-                            return "Wish {$priority}";
+                            return "Choice {$priority}";
                         })
                         ->live()
                         ->options(fn (Get $get, Select $component): array => static::getAvailableFacilityOptions(
