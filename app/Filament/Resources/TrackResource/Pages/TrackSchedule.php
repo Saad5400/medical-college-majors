@@ -36,7 +36,7 @@ class TrackSchedule extends Page
      */
     public static function canAccess(array $parameters = []): bool
     {
-        return auth()->user()?->can('viewAny', Track::class) ?? false;
+        return auth()->check();
     }
 
     public function mount(): void
