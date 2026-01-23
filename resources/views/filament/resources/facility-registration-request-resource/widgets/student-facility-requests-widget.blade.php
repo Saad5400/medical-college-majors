@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            My Registration Requests
+            My Facility Registration Requests
         </x-slot>
 
         {{-- Custom CSS to ensure visibility without requiring a build step, supporting both Light and Dark modes --}}
