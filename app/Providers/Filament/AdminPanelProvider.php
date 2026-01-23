@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\DatabaseBackupWidget;
+use App\Filament\Widgets\StudentDashboardWidget;
 use App\Filament\Widgets\StudentGpaStatsWidget;
 use App\Filament\Widgets\StudentRegistrationStatsWidget;
 use Devonab\FilamentEasyFooter\EasyFooterPlugin;
@@ -59,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 //                AccountWidget::class,
+                StudentDashboardWidget::class,
                 StudentRegistrationStatsWidget::class,
                 StudentGpaStatsWidget::class,
                 DatabaseBackupWidget::class,
