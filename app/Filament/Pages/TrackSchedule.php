@@ -1,18 +1,17 @@
 <?php
 
-namespace App\Filament\Resources\TrackResource\Pages;
+namespace App\Filament\Pages;
 
 use App\Enums\Month;
-use App\Filament\Resources\TrackResource;
 use App\Models\Specialization;
 use App\Models\Track;
-use Filament\Resources\Pages\Page;
+use Filament\Pages\Page;
 
 class TrackSchedule extends Page
 {
-    protected static string $resource = TrackResource::class;
+    protected string $view = 'filament.pages.track-schedule';
 
-    protected string $view = 'filament.resources.track-resource.pages.track-schedule';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $title = 'Track Schedule';
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TrackResource\Pages;
 
 use App\Filament\Exports\UserExporter;
+use App\Filament\Pages\TrackSchedule;
 use App\Filament\Resources\TrackResource;
 use App\Models\RegistrationRequest;
 use App\Models\Track;
@@ -25,7 +26,7 @@ class ListTracks extends ListRecords
             Action::make('schedule')
                 ->label('View track schedule')
                 ->icon('heroicon-o-table-cells')
-                ->url(fn (): string => TrackResource::getUrl('schedule'))
+                ->url(fn (): string => TrackSchedule::getUrl())
                 ->color('info'),
             ExportAction::make()
                 ->exporter(UserExporter::class)

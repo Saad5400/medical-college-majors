@@ -6,7 +6,6 @@ use App\Enums\Month;
 use App\Filament\Resources\TrackResource\Pages\CreateTrack;
 use App\Filament\Resources\TrackResource\Pages\EditTrack;
 use App\Filament\Resources\TrackResource\Pages\ListTracks;
-use App\Filament\Resources\TrackResource\Pages\TrackSchedule;
 use App\Filament\Resources\TrackResource\RelationManagers\TrackSpecializationsRelationManager;
 use App\Filament\Resources\TrackResource\RelationManagers\UsersRelationManager;
 use App\Models\Track;
@@ -172,7 +171,6 @@ class TrackResource extends Resource
         return [
             'index' => ListTracks::route('/'),
             'create' => CreateTrack::route('/create'),
-            'schedule' => TrackSchedule::route('/schedule'),
             'edit' => EditTrack::route('/{record}/edit'),
         ];
     }
