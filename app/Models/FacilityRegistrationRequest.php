@@ -22,6 +22,7 @@ class FacilityRegistrationRequest extends Model
     protected $fillable = [
         'user_id',
         'month_index',
+        'elective_duration_months',
         'assigned_facility_id',
         'assigned_specialization_id',
     ];
@@ -30,6 +31,7 @@ class FacilityRegistrationRequest extends Model
     {
         return [
             'month_index' => 'integer',
+            'elective_duration_months' => 'integer',
         ];
     }
 

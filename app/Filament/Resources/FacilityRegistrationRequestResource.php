@@ -119,7 +119,15 @@ class FacilityRegistrationRequestResource extends Resource
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthSpecializationInfo($get, $record)),
                         TextEntry::make('month_duration')
                             ->label('Duration')
-                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthDurationInfo($get, $record)),
+                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthDurationInfo($get, $record))
+                            ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => ! static::isElectiveMonthAtRoot($get, $record)),
+                        Select::make('elective_duration_months')
+                            ->label('Duration (months)')
+                            ->options(static::getElectiveDurationOptions())
+                            ->default(1)
+                            ->required()
+                            ->live()
+                            ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::isElectiveMonthAtRoot($get, $record)),
                     ])
                     ->visible(fn (Get $get, ?FacilityRegistrationRequest $record): bool => static::resolveMonthIndex($get, $record) !== null)
                     ->columnSpanFull(),
@@ -441,10 +449,11 @@ class FacilityRegistrationRequestResource extends Resource
                         'duration' => $durationMonths,
                     ];
                 } elseif (in_array($recordMonth, $electiveMonths, true)) {
+                    $electiveDuration = static::normalizeDuration($record->elective_duration_months);
                     $monthRanges[$recordMonth] = [
                         'start' => $recordMonth,
-                        'end' => $recordMonth,
-                        'duration' => 1,
+                        'end' => min(12, $recordMonth + $electiveDuration - 1),
+                        'duration' => $electiveDuration,
                     ];
                 }
             }
@@ -542,6 +551,34 @@ class FacilityRegistrationRequestResource extends Resource
             ->orderBy('name')
             ->pluck('name', 'id')
             ->all();
+    }
+
+    private static function isElectiveMonthAtRoot(Get $get, ?FacilityRegistrationRequest $record = null): bool
+    {
+        $monthIndex = static::resolveMonthIndex($get, $record);
+
+        if (! $monthIndex) {
+            return false;
+        }
+
+        $track = static::resolveFormUser($get, $record)?->track;
+        $electiveMonths = $track?->elective_months ?? [];
+
+        return in_array($monthIndex, $electiveMonths, true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function getElectiveDurationOptions(): array
+    {
+        $options = [];
+
+        for ($i = 1; $i <= 12; $i++) {
+            $options[$i] = $i === 1 ? '1 month' : "{$i} months";
+        }
+
+        return $options;
     }
 
     private static function isElectiveMonth(Get $get): bool
@@ -681,7 +718,7 @@ class FacilityRegistrationRequestResource extends Resource
             $query->whereKeyNot($ignoreRequestId);
         }
 
-        $requests = $query->with('wishes.specialization')->get(['id', 'month_index', 'user_id']);
+        $requests = $query->with('wishes.specialization')->get(['id', 'month_index', 'elective_duration_months', 'user_id']);
         $blockedMonths = [];
 
         foreach ($requests as $request) {
@@ -703,7 +740,10 @@ class FacilityRegistrationRequestResource extends Resource
                 //         ->first()?->duration_months,
                 // );
 
-                $durationMonths = 1;
+                // TODO: reconsider whether allowing students to freely choose elective month duration is the right approach,
+                // or if it should be capped/constrained based on track configuration or available seats
+
+                $durationMonths = static::normalizeDuration($request->elective_duration_months);
             }
 
             $endMonth = min(12, $startMonth + $durationMonths - 1);
