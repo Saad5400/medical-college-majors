@@ -314,10 +314,18 @@
                 <div class="ps-connector {{ $displaySteps[$index - 1]['request'] !== null ? 'ps-connector-completed' : '' }}"></div>
             @endif
 
-            <div
-                class="ps-step {{ $isClickable ? 'ps-step-clickable' : '' }} {{ $isCompleted && !$isActive ? 'ps-step-completed' : '' }} {{ $isActive ? 'ps-step-active' : '' }}"
-                @if($isClickable && $url) onclick="window.location.href='{{ $url }}'" @endif
-            >
+            @if ($isClickable && $url)
+                <a
+                    href="{{ $url }}"
+                    wire:navigate
+                    class="ps-step ps-step-clickable {{ $isCompleted && !$isActive ? 'ps-step-completed' : '' }} {{ $isActive ? 'ps-step-active' : '' }}"
+                    style="text-decoration: none;"
+                >
+            @else
+                <div
+                    class="ps-step {{ $isCompleted && !$isActive ? 'ps-step-completed' : '' }} {{ $isActive ? 'ps-step-active' : '' }}"
+                >
+            @endif
                 <div class="ps-circle">
                     @if ($isCompleted)
                         <svg class="ps-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,7 +341,11 @@
                         <br><span style="font-size: 0.625rem; opacity: 0.8;">{{ $specializationName }}</span>
                     @endif
                 </div>
-            </div>
+            @if ($isClickable && $url)
+                </a>
+            @else
+                </div>
+            @endif
         @endforeach
     </div>
 </div>
