@@ -72,8 +72,7 @@
         $processedMonths[$month] = true;
     }
 
-    // Find current month and next available month
-    $currentMonth = null;
+    // Find next available month
     $nextAvailableMonth = null;
 
     foreach ($months as $month) {
@@ -81,13 +80,16 @@
             continue;
         }
 
-        if (isset($requests[$month])) {
-            $currentMonth = $month;
-        } elseif ($nextAvailableMonth === null) {
+        if (!isset($requests[$month])) {
             $nextAvailableMonth = $month;
             break;
         }
     }
+
+    // The active (blue) month is either the record being edited, or the next available on create
+    $activeMonth = isset($record) && $record !== null
+        ? (int) $record->month_index
+        : $nextAvailableMonth;
 @endphp
 
 <div class="ps-wrapper">
@@ -148,17 +150,11 @@
             color: #15803d;
         }
 
-        .ps-step-current .ps-circle {
+        .ps-step-active .ps-circle {
             background-color: #dbeafe;
             border-color: #60a5fa;
             color: #1e40af;
             box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
-        }
-
-        .ps-step-next .ps-circle {
-            background-color: #fef3c7;
-            border-color: #fbbf24;
-            color: #92400e;
         }
 
         .ps-step-clickable:hover .ps-circle {
@@ -178,13 +174,9 @@
             color: #15803d;
         }
 
-        .ps-step-current .ps-label {
+        .ps-step-active .ps-label {
             color: #1e40af;
             font-weight: 600;
-        }
-
-        .ps-step-next .ps-label {
-            color: #92400e;
         }
 
         .ps-connector {
@@ -223,17 +215,11 @@
             color: #4ade80;
         }
 
-        .dark .ps-step-current .ps-circle {
+        .dark .ps-step-active .ps-circle {
             background-color: rgba(30, 64, 175, 0.2);
             border-color: rgba(96, 165, 250, 0.4);
             color: #60a5fa;
             box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
-        }
-
-        .dark .ps-step-next .ps-circle {
-            background-color: rgba(146, 64, 14, 0.2);
-            border-color: rgba(251, 191, 36, 0.4);
-            color: #fbbf24;
         }
 
         .dark .ps-label {
@@ -244,12 +230,8 @@
             color: #4ade80;
         }
 
-        .dark .ps-step-current .ps-label {
+        .dark .ps-step-active .ps-label {
             color: #60a5fa;
-        }
-
-        .dark .ps-step-next .ps-label {
-            color: #fbbf24;
         }
 
         .dark .ps-connector {
@@ -312,14 +294,13 @@
                 $request = $step['request'];
 
                 $isCompleted = $request !== null;
-                $isCurrent = $currentMonth === $month;
-                $isNext = $nextAvailableMonth === $month;
-                $isClickable = $isCompleted || $isNext;
+                $isActive = $activeMonth === $month;
+                $isClickable = $isCompleted || $nextAvailableMonth === $month;
 
                 $url = null;
                 if ($isCompleted) {
                     $url = route('filament.admin.resources.facility-registration-requests.edit', ['record' => $request->id]);
-                } elseif ($isNext) {
+                } elseif ($nextAvailableMonth === $month) {
                     $url = route('filament.admin.resources.facility-registration-requests.create');
                 }
 
@@ -334,7 +315,7 @@
             @endif
 
             <div
-                class="ps-step {{ $isClickable ? 'ps-step-clickable' : '' }} {{ $isCompleted ? 'ps-step-completed' : '' }} {{ $isCurrent ? 'ps-step-current' : '' }} {{ $isNext ? 'ps-step-next' : '' }}"
+                class="ps-step {{ $isClickable ? 'ps-step-clickable' : '' }} {{ $isCompleted && !$isActive ? 'ps-step-completed' : '' }} {{ $isActive ? 'ps-step-active' : '' }}"
                 @if($isClickable && $url) onclick="window.location.href='{{ $url }}'" @endif
             >
                 <div class="ps-circle">
