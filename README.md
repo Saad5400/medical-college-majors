@@ -625,12 +625,12 @@ June onwards:    [Need to register for remaining months]
 
 2. Locate the database container id:
    ```bash
-   docker ps # 1d7db2a958cb
+   docker ps # 1b55b24c0223
    ```
 
 3. Create a dump of the database:
    ```bash
-   docker exec -it 1d7db2a958cb pg_dump -U postgres -d postgres > postgres_backup.sql
+   docker exec -it 1b55b24c0223 pg_dump -U postgres -d medical_college > postgres_backup.sql
     ```
 
 4. Exit the vps:

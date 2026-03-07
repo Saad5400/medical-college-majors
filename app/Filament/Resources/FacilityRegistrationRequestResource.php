@@ -112,18 +112,8 @@ class FacilityRegistrationRequestResource extends Resource
                     ->dehydrated()
                     ->required()
                     ->live(),
-                Fieldset::make('Selected month overview')
+                Fieldset::make(' ')
                     ->schema([
-                        TextEntry::make('month_track')
-                            ->label('Track')
-                            ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthTrackInfo($get, $record)),
-                        TextEntry::make('user_gpa')
-                            ->label('GPA')
-                            ->state(function (Get $get, ?FacilityRegistrationRequest $record): string {
-                                $user = static::resolveFormUser($get, $record);
-
-                                return $user?->gpa ?? '-';
-                            }),
                         TextEntry::make('month_specialization')
                             ->label('Specialization')
                             ->state(fn (Get $get, ?FacilityRegistrationRequest $record): string => static::getMonthSpecializationInfo($get, $record)),
@@ -146,13 +136,20 @@ class FacilityRegistrationRequestResource extends Resource
                     ->label('Created at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: fn () => ! auth()->user()->hasRole('admin')),
+                TextColumn::make('updated_at')
+                    ->label('Updated at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.name')
                     ->label('Student')
+                    ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('user.gpa')
                     ->label('GPA')
+                    ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->sortable(),
                 TextColumn::make('month_index')
                     ->label('Month')
@@ -696,12 +693,17 @@ class FacilityRegistrationRequestResource extends Resource
                 $durationMonths = static::normalizeDuration($trackSpecialization->specialization?->duration_months);
             } else {
                 $startMonth = $monthIndex;
-                $durationMonths = static::normalizeDuration(
-                    $request->wishes
-                        ->pluck('specialization')
-                        ->filter()
-                        ->first()?->duration_months,
-                );
+
+                // TODO: consider if elective months should use the duration of the specialization or should be 1 month at all cases
+
+                // $durationMonths = static::normalizeDuration(
+                //     $request->wishes
+                //         ->pluck('specialization')
+                //         ->filter()
+                //         ->first()?->duration_months,
+                // );
+
+                $durationMonths = 1;
             }
 
             $endMonth = min(12, $startMonth + $durationMonths - 1);

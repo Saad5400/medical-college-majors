@@ -103,27 +103,6 @@ class RegistrationRequestResource extends Resource
     {
         return $schema
             ->components([
-                Fieldset::make('Student details')
-                    ->schema([
-                        TextEntry::make('user_name')
-                            ->label('Name')
-                            ->state(auth()->user()->name)
-                            ->disabled(),
-                        TextEntry::make('user_email')
-                            ->label('Email')
-                            ->state(auth()->user()->email)
-                            ->disabled(),
-                        TextEntry::make('user_student_id')
-                            ->label('Student ID')
-                            ->state(auth()->user()->student_id)
-                            ->disabled(),
-                        TextEntry::make('user_gpa')
-                            ->label('GPA')
-                            ->state(auth()->user()->gpa)
-                            ->disabled(),
-                    ])
-                    ->visible(fn () => ! auth()->user()->hasRole('admin'))
-                    ->columnSpanFull(),
                 Select::make('user_id')
                     ->label('Student')
                     ->relationship('user', 'name')
@@ -144,7 +123,7 @@ class RegistrationRequestResource extends Resource
                     ->label('Created at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: fn () => ! auth()->user()->hasRole('admin')),
                 TextColumn::make('updated_at')
                     ->label('Updated at')
                     ->dateTime()
@@ -152,16 +131,18 @@ class RegistrationRequestResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.name')
                     ->label('Student')
+                    ->visible(fn () => auth()->user()->hasRole('admin'))
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('user.gpa')
                     ->label('GPA')
+                    ->visible(fn () => auth()->user()->hasRole(roles: 'admin'))
                     ->sortable(),
                 TextColumn::make('trackRegistrationRequests')
                     ->getStateUsing(fn ($record) => $record->trackRegistrationRequests->pluck('track.name'))
                     ->label('Track preferences'),
             ])
-            ->defaultSort('user.gpa', 'desc')
+            ->defaultSort(auth()->user()->hasRole('admin') ? 'user.gpa' : 'created_at', 'desc')
             ->filters([
                 //
             ])
