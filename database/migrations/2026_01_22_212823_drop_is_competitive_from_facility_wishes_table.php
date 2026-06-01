@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('facility_wishes', function (Blueprint $table) {
-            $table->dropIndex(['facility_registration_request_id', 'is_competitive']);
+            $table->dropIndex('facility_wishes_request_competitive_index');
             $table->dropColumn('is_competitive');
         });
     }

@@ -34,7 +34,7 @@ return new class extends Migration
             // Each request can only have one wish per priority
             $table->unique(['facility_registration_request_id', 'priority'], 'request_priority_unique');
 
-            $table->index(['facility_registration_request_id', 'is_competitive']);
+            $table->index(['facility_registration_request_id', 'is_competitive'], 'facility_wishes_request_competitive_index');
         });
     }
 
