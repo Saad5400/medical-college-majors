@@ -6,6 +6,7 @@ use App\Models\Track;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -27,7 +28,10 @@ class DatabaseSeeder extends Seeder
             ['email' => 'sdbtwa@gmail.com'],
             [
                 'name' => 'Saad Batwa',
-                'password' => bcrypt('1'),
+                // Never a fixed password: this repository is public and the
+                // seeder has run against production (`migrate --seed`). Set
+                // SEED_ADMIN_PASSWORD, or reset the password after seeding.
+                'password' => bcrypt(env('SEED_ADMIN_PASSWORD') ?: Str::password(32)),
             ]
         );
 
